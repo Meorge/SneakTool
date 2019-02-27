@@ -13,7 +13,7 @@ global current_points
 
 send_nudes = [[200.0, 240.0], [160.0, 240.0], [120.0, 240.0], [120.0, 280.0], [120.0, 320.0], [160.0, 320.0], [200.0, 320.0], [200.0, 360.0], [200.0, 400.0], [160.0, 400.0], [120.0, 400.0], [280.0, 240.0], [280.0, 280.0], [280.0, 320.0], [280.0, 360.0], [280.0, 400.0], [320.0, 400.0], [360.0, 400.0], [320.0, 320.0], [360.0, 320.0], [320.0, 240.0], [360.0, 240.0], [440.0, 240.0], [440.0, 280.0], [440.0, 320.0], [440.0, 360.0], [440.0, 400.0], [480.0, 280.0], [520.0, 320.0], [560.0, 360.0], [560.0, 400.0], [560.0, 320.0], [560.0, 280.0], [560.0, 240.0], [640.0, 240.0], [640.0, 280.0], [640.0, 320.0], [640.0, 360.0], [640.0, 400.0], [680.0, 240.0], [720.0, 280.0], [720.0, 320.0], [720.0, 360.0], [680.0, 400.0], [80.0, 480.0], [80.0, 520.0], [80.0, 560.0], [80.0, 600.0], [80.0, 640.0], [120.0, 520.0], [160.0, 560.0], [200.0, 480.0], [200.0, 520.0], [200.0, 560.0], [200.0, 600.0], [200.0, 640.0], [280.0, 480.0], [280.0, 520.0], [280.0, 560.0], [280.0, 600.0], [280.0, 640.0], [320.0, 640.0], [360.0, 640.0], [360.0, 600.0], [360.0, 560.0], [360.0, 520.0], [360.0, 480.0], [440.0, 480.0], [440.0, 520.0], [440.0, 560.0], [440.0, 600.0], [440.0, 640.0], [480.0, 480.0], [520.0, 520.0], [520.0, 560.0], [520.0, 600.0], [480.0, 640.0], [600.0, 480.0], [600.0, 520.0], [600.0, 560.0], [600.0, 600.0], [600.0, 640.0], [640.0, 640.0], [680.0, 640.0], [640.0, 560.0], [680.0, 560.0], [680.0, 480.0], [640.0, 480.0], [840.0, 480.0], [800.0, 480.0], [760.0, 480.0], [760.0, 520.0], [760.0, 560.0], [800.0, 560.0], [840.0, 560.0], [840.0, 600.0], [840.0, 640.0], [800.0, 640.0], [760.0, 640.0]]
 
-#square_button_style = "QPushButton {}"
+#square_button_style = "QPushButton {width: 20; height: 20;}"
 
 CELL_SIZE = 40
 
@@ -67,7 +67,12 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPalette.setWindowTitle("Tools")
 		self.toolPaletteWidget = QtWidgets.QWidget()
 
-		self.toolPaletteWidget_DrawButton = QtWidgets.QPushButton("Draw")
+		self.toolPaletteWidget_DrawButton = QtWidgets.QPushButton()
+		self.toolPaletteWidget_DrawButtonIco = QtGui.QIcon(icons_path + "aero_pen_xl.cur")
+		#self.toolPaletteWidget_DrawButton.align
+		self.toolPaletteWidget_DrawButton.setIcon(self.toolPaletteWidget_DrawButtonIco)
+		#self.toolPaletteWidget_DrawButton.setFlat(True)
+		self.toolPaletteWidget_DrawButton.setFixedSize(45,40)
 		#self.toolPaletteWidget_DrawButton.setCheckable(True)
 		self.toolPaletteWidget_DrawButton.clicked.connect(self.EnableDrawMode)
 
@@ -75,9 +80,16 @@ class Window(QtWidgets.QMainWindow):
 
 		self.toolPaletteWidget_EraseButton = QtWidgets.QPushButton("Erase")
 		self.toolPaletteWidget_EraseButton.clicked.connect(self.EnableEraseMode)
+
+
+
 		#self.toolPaletteWidget_EraseButton.setCheckable(True)
 
-		self.toolPaletteWidget_MoveButton = QtWidgets.QPushButton("Move")
+		self.toolPaletteWidget_MoveButton = QtWidgets.QPushButton()
+		self.toolPaletteWidget_MoveButtonIco = QtGui.QIcon(icons_path + "arrow_rl.cur")
+		#self.toolPaletteWidget_DrawButton.align
+		self.toolPaletteWidget_MoveButton.setIcon(self.toolPaletteWidget_MoveButtonIco)
+		self.toolPaletteWidget_MoveButton.setFixedSize(45,40)
 		self.toolPaletteWidget_MoveButton.setCheckable(True)
 
 		self.toolPaletteWidget_Layout = QtWidgets.QVBoxLayout()
@@ -163,9 +175,9 @@ class Window(QtWidgets.QMainWindow):
 	def EnableEraseMode(self):
 		global draw_mode
 		draw_mode = 1
-		# self.toolPaletteWidget_DrawButton.setChecked(False)
-		# self.toolPaletteWidget_MoveButton.setChecked(False)
-		# self.toolPaletteWidget_EraseButton.setChecked(True)
+		self.toolPaletteWidget_DrawButton.setChecked(False)
+		self.toolPaletteWidget_MoveButton.setChecked(False)
+		self.toolPaletteWidget_EraseButton.setChecked(True)
 
 		print("ERASE MODE")
 		print(draw_mode)
@@ -173,9 +185,9 @@ class Window(QtWidgets.QMainWindow):
 	def EnableDrawMode(self):
 		global draw_mode
 		draw_mode = 0
-		# self.toolPaletteWidget_DrawButton.setChecked(True)
-		# self.toolPaletteWidget_MoveButton.setChecked(False)
-		# self.toolPaletteWidget_EraseButton.setChecked(False)
+		self.toolPaletteWidget_DrawButton.setChecked(True)
+		self.toolPaletteWidget_MoveButton.setChecked(False)
+		self.toolPaletteWidget_EraseButton.setChecked(False)
 
 		print("DRAW MODE")
 
