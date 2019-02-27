@@ -1,21 +1,45 @@
 import os
 import sys
+import sneaklib
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets, QtMacExtras
 Qt = QtCore.Qt
 
 
 global icons_path
 
+global current_points
+
+
+send_nudes = [[200.0, 240.0], [160.0, 240.0], [120.0, 240.0], [120.0, 280.0], [120.0, 320.0], [160.0, 320.0], [200.0, 320.0], [200.0, 360.0], [200.0, 400.0], [160.0, 400.0], [120.0, 400.0], [280.0, 240.0], [280.0, 280.0], [280.0, 320.0], [280.0, 360.0], [280.0, 400.0], [320.0, 400.0], [360.0, 400.0], [320.0, 320.0], [360.0, 320.0], [320.0, 240.0], [360.0, 240.0], [440.0, 240.0], [440.0, 280.0], [440.0, 320.0], [440.0, 360.0], [440.0, 400.0], [480.0, 280.0], [520.0, 320.0], [560.0, 360.0], [560.0, 400.0], [560.0, 320.0], [560.0, 280.0], [560.0, 240.0], [640.0, 240.0], [640.0, 280.0], [640.0, 320.0], [640.0, 360.0], [640.0, 400.0], [680.0, 240.0], [720.0, 280.0], [720.0, 320.0], [720.0, 360.0], [680.0, 400.0], [80.0, 480.0], [80.0, 520.0], [80.0, 560.0], [80.0, 600.0], [80.0, 640.0], [120.0, 520.0], [160.0, 560.0], [200.0, 480.0], [200.0, 520.0], [200.0, 560.0], [200.0, 600.0], [200.0, 640.0], [280.0, 480.0], [280.0, 520.0], [280.0, 560.0], [280.0, 600.0], [280.0, 640.0], [320.0, 640.0], [360.0, 640.0], [360.0, 600.0], [360.0, 560.0], [360.0, 520.0], [360.0, 480.0], [440.0, 480.0], [440.0, 520.0], [440.0, 560.0], [440.0, 600.0], [440.0, 640.0], [480.0, 480.0], [520.0, 520.0], [520.0, 560.0], [520.0, 600.0], [480.0, 640.0], [600.0, 480.0], [600.0, 520.0], [600.0, 560.0], [600.0, 600.0], [600.0, 640.0], [640.0, 640.0], [680.0, 640.0], [640.0, 560.0], [680.0, 560.0], [680.0, 480.0], [640.0, 480.0], [840.0, 480.0], [800.0, 480.0], [760.0, 480.0], [760.0, 520.0], [760.0, 560.0], [800.0, 560.0], [840.0, 560.0], [840.0, 600.0], [840.0, 640.0], [800.0, 640.0], [760.0, 640.0]]
+
+#square_button_style = "QPushButton {}"
+
+CELL_SIZE = 40
+
+global draw_mode
+"""
+Draw modes
+0 = draw
+1 = erase
+2 = sprites?
+"""
+
+
+
 class Window(QtWidgets.QMainWindow):
 	"""Main Window"""
 	
 	def __init__(self, parent=None):
+
+
 		super(Window, self).__init__(parent)
+		
 
 		print(icons_path)
 
-		self.setupUi()
+		#self.setupUi()
+		self.meorgeUI()
 		self.gridView = GridView()
 		
 		self.gridScene = GridScene()
@@ -29,192 +53,133 @@ class Window(QtWidgets.QMainWindow):
 		
 		
 		self.setCentralWidget(self.gridView)
+
 		
 		#self.resize(500,500)
+
+
+	def meorgeUI(self):
+
+		### TOOL PALETTE
+		self.toolPalette = QtWidgets.QDockWidget()
+		self.toolPalette.setWindowTitle("Tools")
+		self.toolPaletteWidget = QtWidgets.QWidget()
+
+		self.toolPaletteWidget_DrawButton = QtWidgets.QPushButton("Draw")
+		#self.toolPaletteWidget_DrawButton.setCheckable(True)
+		self.toolPaletteWidget_DrawButton.clicked.connect(self.EnableDrawMode)
+
 		
-		#############################
-		## COMPUTER-GENERATED CODE ##
-		#############################
 
-	def setupUi(self):
-		self.setObjectName("MainWindow")
-		self.resize(1402, 802)
-		self.centralwidget = QtWidgets.QWidget(self)
-		self.centralwidget.setObjectName("centralwidget")
-		self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
-		self.gridLayout.setObjectName("gridLayout")
-		self.graphicsView = GridView(self.centralwidget)
-		self.graphicsView.setObjectName("graphicsView")
-		self.gridLayout.addWidget(self.graphicsView, 0, 0, 2, 1)
-		self.setCentralWidget(self.centralwidget)
-		self.menubar = QtWidgets.QMenuBar(self)
-		self.menubar.setGeometry(QtCore.QRect(0, 0, 1402, 36))
-		self.menubar.setObjectName("menubar")
-		self.menuFile = QtWidgets.QMenu(self.menubar)
-		self.menuFile.setObjectName("menuFile")
-		self.setMenuBar(self.menubar)
-		self.statusbar = QtWidgets.QStatusBar(self)
-		self.statusbar.setObjectName("statusbar")
-		self.setStatusBar(self.statusbar)
-		self.ToolsDockWidget = QtWidgets.QDockWidget(self)
-		self.ToolsDockWidget.setFeatures(QtWidgets.QDockWidget.DockWidgetFloatable | QtWidgets.QDockWidget.DockWidgetMovable)
-		self.ToolsDockWidget.setObjectName("ToolsDockWidget")
-		self.dockWidgetContents = QtWidgets.QWidget()
-		self.dockWidgetContents.setObjectName("dockWidgetContents")
-		self.verticalLayout = QtWidgets.QVBoxLayout(self.dockWidgetContents)
-		self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-		self.verticalLayout.setObjectName("verticalLayout")
-		self.selectMoveButtom = QtWidgets.QPushButton(self.dockWidgetContents)
-		icon = QtGui.QIcon()
-		icon.addPixmap(QtGui.QPixmap(icons_path + "arrow_rl.cur"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-		self.selectMoveButtom.setIcon(icon)
-		self.selectMoveButtom.setIconSize(QtCore.QSize(48, 48))
-		self.selectMoveButtom.setCheckable(True)
-		self.selectMoveButtom.setChecked(True)
-		self.selectMoveButtom.setObjectName("selectMoveButtom")
-		self.verticalLayout.addWidget(self.selectMoveButtom)
-		self.drawTilesButton = QtWidgets.QPushButton(self.dockWidgetContents)
-		icon1 = QtGui.QIcon()
-		icon1.addPixmap(QtGui.QPixmap(icons_path + "aero_pen_xl.cur"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-		self.drawTilesButton.setIcon(icon1)
-		self.drawTilesButton.setIconSize(QtCore.QSize(48, 48))
-		self.drawTilesButton.setCheckable(True)
-		self.drawTilesButton.setObjectName("drawTilesButton")
-		self.verticalLayout.addWidget(self.drawTilesButton)
-		self.ActorBox = QtWidgets.QGroupBox(self.dockWidgetContents)
-		self.ActorBox.setObjectName("ActorBox")
-		self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.ActorBox)
-		self.verticalLayout_2.setObjectName("verticalLayout_2")
-		self.AddGuardButton = QtWidgets.QPushButton(self.ActorBox)
-		icon2 = QtGui.QIcon()
-		icon2.addPixmap(QtGui.QPixmap(icons_path + "764986.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-		self.AddGuardButton.setIcon(icon2)
-		self.AddGuardButton.setIconSize(QtCore.QSize(48, 48))
-		self.AddGuardButton.setCheckable(True)
-		self.AddGuardButton.setChecked(False)
-		self.AddGuardButton.setObjectName("AddGuardButton")
-		self.verticalLayout_2.addWidget(self.AddGuardButton)
-		self.AddCameraButton = QtWidgets.QPushButton(self.ActorBox)
-		icon3 = QtGui.QIcon()
-		icon3.addPixmap(QtGui.QPixmap(icons_path + "584abe7e2912007028bd9330.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-		self.AddCameraButton.setIcon(icon3)
-		self.AddCameraButton.setIconSize(QtCore.QSize(48, 48))
-		self.AddCameraButton.setCheckable(True)
-		self.AddCameraButton.setChecked(False)
-		self.AddCameraButton.setObjectName("AddCameraButton")
-		self.verticalLayout_2.addWidget(self.AddCameraButton)
-		self.AddGemstoneButton = QtWidgets.QPushButton(self.ActorBox)
-		icon4 = QtGui.QIcon()
-		icon4.addPixmap(QtGui.QPixmap(icons_path + "45130c6d03b2256e6615f2a696195f41-diamond-gem-flat-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-		self.AddGemstoneButton.setIcon(icon4)
-		self.AddGemstoneButton.setIconSize(QtCore.QSize(48, 48))
-		self.AddGemstoneButton.setCheckable(True)
-		self.AddGemstoneButton.setChecked(False)
-		self.AddGemstoneButton.setObjectName("AddGemstoneButton")
-		self.verticalLayout_2.addWidget(self.AddGemstoneButton)
-		self.AddDoorButton = QtWidgets.QPushButton(self.ActorBox)
-		icon5 = QtGui.QIcon()
-		icon5.addPixmap(QtGui.QPixmap(icons_path + "Door-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-		self.AddDoorButton.setIcon(icon5)
-		self.AddDoorButton.setIconSize(QtCore.QSize(48, 48))
-		self.AddDoorButton.setCheckable(True)
-		self.AddDoorButton.setChecked(False)
-		self.AddDoorButton.setObjectName("AddDoorButton")
-		self.verticalLayout_2.addWidget(self.AddDoorButton)
-		self.AddTrashCanButton = QtWidgets.QPushButton(self.ActorBox)
-		icon6 = QtGui.QIcon()
-		icon6.addPixmap(QtGui.QPixmap(icons_path + "698410_trash_512x512.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-		self.AddTrashCanButton.setIcon(icon6)
-		self.AddTrashCanButton.setIconSize(QtCore.QSize(48, 48))
-		self.AddTrashCanButton.setCheckable(True)
-		self.AddTrashCanButton.setChecked(False)
-		self.AddTrashCanButton.setObjectName("AddTrashCanButton")
-		self.verticalLayout_2.addWidget(self.AddTrashCanButton)
-		self.AddGemSackButton = QtWidgets.QPushButton(self.ActorBox)
-		icon7 = QtGui.QIcon()
-		icon7.addPixmap(QtGui.QPixmap(icons_path + "Money-Bag-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
-		self.AddGemSackButton.setIcon(icon7)
-		self.AddGemSackButton.setIconSize(QtCore.QSize(48, 48))
-		self.AddGemSackButton.setCheckable(True)
-		self.AddGemSackButton.setChecked(False)
-		self.AddGemSackButton.setObjectName("AddGemSackButton")
-		self.verticalLayout_2.addWidget(self.AddGemSackButton)
-		self.verticalLayout.addWidget(self.ActorBox)
-		self.ToolsDockWidget.setWidget(self.dockWidgetContents)
-		self.addDockWidget(QtCore.Qt.DockWidgetArea(1), self.ToolsDockWidget)
-		self.TilesDockWidget = QtWidgets.QDockWidget(self)
-		self.TilesDockWidget.setFeatures(QtWidgets.QDockWidget.DockWidgetFloatable | QtWidgets.QDockWidget.DockWidgetMovable)
-		self.TilesDockWidget.setObjectName("TilesDockWidget")
-		self.dockWidgetContents_2 = QtWidgets.QWidget()
-		self.dockWidgetContents_2.setObjectName("dockWidgetContents_2")
-		self.gridLayout_2 = QtWidgets.QGridLayout(self.dockWidgetContents_2)
-		self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
-		self.gridLayout_2.setObjectName("gridLayout_2")
-		self.listView_2 = QtWidgets.QListView(self.dockWidgetContents_2)
-		sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-		sizePolicy.setHorizontalStretch(0)
-		sizePolicy.setVerticalStretch(0)
-		sizePolicy.setHeightForWidth(self.listView_2.sizePolicy().hasHeightForWidth())
-		self.listView_2.setSizePolicy(sizePolicy)
-		self.listView_2.setObjectName("listView_2")
-		self.gridLayout_2.addWidget(self.listView_2, 0, 0, 1, 1)
-		self.TilesDockWidget.setWidget(self.dockWidgetContents_2)
-		self.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.TilesDockWidget)
-		self.objectsTockWidget = QtWidgets.QDockWidget(self)
-		self.objectsTockWidget.setFeatures(QtWidgets.QDockWidget.DockWidgetFloatable | QtWidgets.QDockWidget.DockWidgetMovable)
-		self.objectsTockWidget.setObjectName("objectsTockWidget")
-		self.dockWidgetContents_3 = QtWidgets.QWidget()
-		self.dockWidgetContents_3.setObjectName("dockWidgetContents_3")
-		self.gridLayout_3 = QtWidgets.QGridLayout(self.dockWidgetContents_3)
-		self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
-		self.gridLayout_3.setObjectName("gridLayout_3")
-		self.listView = QtWidgets.QListView(self.dockWidgetContents_3)
-		sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-		sizePolicy.setHorizontalStretch(0)
-		sizePolicy.setVerticalStretch(0)
-		sizePolicy.setHeightForWidth(self.listView.sizePolicy().hasHeightForWidth())
-		self.listView.setSizePolicy(sizePolicy)
-		self.listView.setObjectName("listView")
-		self.gridLayout_3.addWidget(self.listView, 0, 0, 1, 1)
-		self.objectsTockWidget.setWidget(self.dockWidgetContents_3)
-		self.addDockWidget(QtCore.Qt.DockWidgetArea(2), self.objectsTockWidget)
-		self.actionNew = QtWidgets.QAction(self)
-		self.actionNew.setObjectName("actionNew")
-		self.actionSave = QtWidgets.QAction(self)
-		self.actionSave.setObjectName("actionSave")
-		self.actionOpen = QtWidgets.QAction(self)
-		self.actionOpen.setObjectName("actionOpen")
-		self.menuFile.addAction(self.actionNew)
-		self.menuFile.addAction(self.actionSave)
-		self.menuFile.addAction(self.actionOpen)
-		self.menubar.addAction(self.menuFile.menuAction())
+		self.toolPaletteWidget_EraseButton = QtWidgets.QPushButton("Erase")
+		self.toolPaletteWidget_EraseButton.clicked.connect(self.EnableEraseMode)
+		#self.toolPaletteWidget_EraseButton.setCheckable(True)
 
-		self.retranslateUi()
-		QtCore.QMetaObject.connectSlotsByName(self)
+		self.toolPaletteWidget_MoveButton = QtWidgets.QPushButton("Move")
+		self.toolPaletteWidget_MoveButton.setCheckable(True)
 
-	def retranslateUi(self):
-		_translate = QtCore.QCoreApplication.translate
-		self.setWindowTitle(_translate("MainWindow", "Sneaksters Level Maker"))
-		self.menuFile.setTitle(_translate("MainWindow", "File"))
-		self.ToolsDockWidget.setWindowTitle(_translate("MainWindow", "Tools"))
-		self.selectMoveButtom.setText(_translate("MainWindow", "Select && Move"))
-		self.drawTilesButton.setText(_translate("MainWindow", "Draw Tiles"))
-		self.ActorBox.setTitle(_translate("MainWindow", "Add Actors"))
-		self.AddGuardButton.setText(_translate("MainWindow", "Guard"))
-		self.AddCameraButton.setText(_translate("MainWindow", "Camera"))
-		self.AddGemstoneButton.setText(_translate("MainWindow", "Gemstone"))
-		self.AddDoorButton.setText(_translate("MainWindow", "Door"))
-		self.AddTrashCanButton.setText(_translate("MainWindow", "Trash Can"))
-		self.AddGemSackButton.setText(_translate("MainWindow", "Gem Sack"))
-		self.TilesDockWidget.setWindowTitle(_translate("MainWindow", "Tiles"))
-		self.objectsTockWidget.setWindowTitle(_translate("MainWindow", "Objects"))
-		self.actionNew.setText(_translate("MainWindow", "New"))
-		self.actionSave.setText(_translate("MainWindow", "Save"))
-		self.actionOpen.setText(_translate("MainWindow", "Open"))
+		self.toolPaletteWidget_Layout = QtWidgets.QVBoxLayout()
+		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_MoveButton)
+		self.toolPaletteWidget_Layout.addSpacing(5)
+		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_DrawButton)
+		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_EraseButton)
+		self.toolPaletteWidget_Layout.addSpacing(5)
+		self.toolPaletteWidget_Layout.setAlignment(Qt.AlignTop)
+
+		self.toolPaletteWidget.setLayout(self.toolPaletteWidget_Layout)
+		self.toolPalette.setWidget(self.toolPaletteWidget)
+		self.toolPalette.setFeatures(QtWidgets.QDockWidget.DockWidgetFloatable | QtWidgets.QDockWidget.DockWidgetMovable)
+		self.addDockWidget(Qt.LeftDockWidgetArea, self.toolPalette)
+
+
+
+		### SPRITE LIST
+		self.spritePalette = QtWidgets.QDockWidget()
+		self.spritePalette.setWindowTitle("Sprite Palette")
+		self.spritePaletteWidget = QtWidgets.QListWidget()
+		self.spritePalette.setWidget(self.spritePaletteWidget)
+		self.addDockWidget(Qt.RightDockWidgetArea, self.spritePalette)
+
+
+		### CURRENT SPRITES
+		self.currentSprites = QtWidgets.QDockWidget()
+		self.currentSprites.setWindowTitle("Current Sprites")
+		self.currentSpritesWidget = QtWidgets.QListWidget()
+		self.currentSprites.setWidget(self.currentSpritesWidget)
+		self.addDockWidget(Qt.RightDockWidgetArea, self.currentSprites)
+
+
+		### BOTTOM BAR
+		self.footerBar = QtWidgets.QStatusBar()
+		self.footerBar_label = QtWidgets.QLabel("0 tiles, 0 sprites")
+		self.footerBar.addPermanentWidget(self.footerBar_label)
+		self.setStatusBar(self.footerBar)
+
+		self.setupMenuBar()
+
+
+	def setupMenuBar(self):
+		self.menuBar = QtWidgets.QMenuBar()
+		self.fileMenu = self.menuBar.addMenu("&File")
+
+		self.saveAsAction = QtWidgets.QAction("&Save As", self)
+		self.saveAsAction.setShortcut(QtGui.QKeySequence.Save)
+		self.saveAsAction.triggered.connect(self.saveFileAs)
+
+		self.openAction = QtWidgets.QAction("&Open", self)
+		self.openAction.setShortcut(QtGui.QKeySequence.Open)
+		self.openAction.triggered.connect(self.openFile)
+
+		self.fileMenu.addAction(self.saveAsAction)
+		self.fileMenu.addAction(self.openAction)
+		self.setMenuBar(self.menuBar)
+
+
+	def saveFileAs(self):
+		saveTo = QtWidgets.QFileDialog.getSaveFileName(self, "Save File")
+		print(saveTo)
+		file = open(saveTo[0], 'wb')
+
+		data_to_save = sneaklib.PackTileData(current_points)
+		file.write(data_to_save)
+		file.close()
+
+	def openFile(self):
+		openFrom = QtWidgets.QFileDialog.getOpenFileName(self, "Open File")
+		print(openFrom)
+		file = open(openFrom[0], 'rb')
+
+		unpacked_data = sneaklib.UnpackTileData(file.read())
+		current_points = unpacked_data[2:]
+		file.close()
+
+
+
+	def EnableEraseMode(self):
+		global draw_mode
+		draw_mode = 1
+		# self.toolPaletteWidget_DrawButton.setChecked(False)
+		# self.toolPaletteWidget_MoveButton.setChecked(False)
+		# self.toolPaletteWidget_EraseButton.setChecked(True)
+
+		print("ERASE MODE")
+		print(draw_mode)
+
+	def EnableDrawMode(self):
+		global draw_mode
+		draw_mode = 0
+		# self.toolPaletteWidget_DrawButton.setChecked(True)
+		# self.toolPaletteWidget_MoveButton.setChecked(False)
+		# self.toolPaletteWidget_EraseButton.setChecked(False)
+
+		print("DRAW MODE")
+
+
 
 ##########################################
 ##########################################
 ##########################################
+
 class GridView(QtWidgets.QGraphicsView):
 	def __init__(self, parent=None):
 		super().__init__(parent)
@@ -229,8 +194,13 @@ class GridView(QtWidgets.QGraphicsView):
 		#self.setBaseSize(10000, 10000)
 
 	def mousePressEvent(self, event):
-		event.ignore()
+		#event.ignore()
 		super(GridView, self).mousePressEvent(event)
+		#print(event.x(), event.y())
+		
+		#self.scene().update(self.sceneRect())
+		#current_points.append([event.x(), event.y()])
+		#self.repaint(0,0,1000,1000)
 
 	def mouseMoveEvent(self, event):
 		event.ignore()
@@ -254,8 +224,31 @@ class GridScene(QtWidgets.QGraphicsScene):
 		node.EstablishInputsOutputs()
 
 	def mousePressEvent(self, event):
-		event.ignore()
+		#event.ignore()
 		super(GridScene, self).mousePressEvent(event)
+		self.update(self.sceneRect())
+
+		fixedX = event.scenePos().x()
+		fixedY = event.scenePos().y()
+
+		# nearestMultipleX = int(CELL_SIZE * round(float(fixedX) / CELL_SIZE))
+		# nearestMultipleY = int(CELL_SIZE * round(float(fixedY) / CELL_SIZE))
+
+		nearestMultipleX = fixedX - (fixedX % CELL_SIZE)
+		nearestMultipleY = fixedY - (fixedY % CELL_SIZE)
+
+		#nearestMultipleX = event.scenePos().x() + (CELL_SIZE - event.scenePos().x()) % CELL_SIZE
+		#nearestMultipleY = event.scenePos().y() + (CELL_SIZE - event.scenePos().y()) % CELL_SIZE
+
+		array = [nearestMultipleX, nearestMultipleY]
+		print("DRAW MODE IS " + str(draw_mode))
+		if draw_mode == 0:
+			current_points.append(array)
+		elif draw_mode == 1:
+			try:
+				current_points.remove(array)
+			except:
+				pass
 
 	def mouseMoveEvent(self, event):
 		event.ignore()
@@ -263,7 +256,8 @@ class GridScene(QtWidgets.QGraphicsScene):
 		super(GridScene, self).mouseMoveEvent(event)
 
 	def drawBackground(self, painter, rect):
-		
+		print("boopy")
+		print(current_points)
 		painter.setBrush(QtGui.QBrush(QtGui.QColor(50,50,50)))
 		painter.drawRect(rect)
 
@@ -274,7 +268,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		# stuff past this point in this func is written by RoadrunnerWMC,
 		# who is really cool.
 
-		CELL_SIZE = 25
+		
 
 		# Get the coordinates of the rect
 		x1 = rect.left()
@@ -296,44 +290,23 @@ class GridScene(QtWidgets.QGraphicsScene):
 		for y in range(int(y1), int(y2 + 1), CELL_SIZE):
 			painter.drawLine(x1, y, x2, y)
 
-	# def drawBackground(self, painter, rect):
 
-	# 	halfOfWidth = (rect.width() / 2)
-	# 	halfOfHeight = (rect.height() / 2)
-	# 	self.backgroundBrush = QtGui.QBrush(QtGui.QColor(50,50,50))
-	# 	painter.setBrush(self.backgroundBrush)
-
-	# 	painter.drawRect(rect)
-
-
-
-	# 	self.gridPen = QtGui.QPen(QtGui.QColor(85,85,85), 1, Qt.DotLine)
-	# 	# self.gridPen = QtGui.QPen(Qt.white, 3, Qt.SolidLine)
-	# 	# painter.setPen(self.gridPen)
-
-	# 	# painter.drawLine(0,0,1000,1000)
-
-
-	# 	# draw the lines - for numbers from 1 to 500 (or maybe zero, IDK) check if
-	# 	divisible by 2; if so, multiply by 15 and draw it from
-	# 	# (15x - halfOfWidth, -halfOfHeight) to (15x, height)
-	# 	for x in range(1000):
-	# 		if (x % 2 == 0):
-	# 			painter.drawLine(x * 15 - halfOfWidth, 0 - halfOfHeight, x * 15 -
-	# 			halfOfWidth, 1000)
-
-	# 	# (-halfOfWidth, 15y - halfOfHeight) to (width, 15y - halfOfHeight)
-	# 	for y in range(1000):
-	# 		if (y % 2 == 0):
-	# 			painter.drawLine(0 - halfOfWidth, y * 15 - halfOfHeight, 1000, y * 15 -
-	# 			halfOfHeight)
+		self.squareBrush = QtGui.QBrush(QtGui.QColor(170,170,170))
+		painter.setBrush(self.squareBrush)
+		
+		for point in current_points:
+			painter.drawRect(point[0], point[1], CELL_SIZE, CELL_SIZE)
 
 
 
 
 
 if __name__ == '__main__':
-	global app, window
+	global app, window, current_points
+
+	draw_mode = 0
+	current_points = send_nudes
+
 	icons_path = os.path.dirname(__file__)
 	if (sys.platform == "darwin"):
 		icons_path += "icons/"
