@@ -29,6 +29,8 @@ Draw modes
 
 class Window(QtWidgets.QMainWindow):
 	"""Main Window"""
+
+	
 	
 	def __init__(self, parent=None):
 
@@ -145,6 +147,7 @@ class Window(QtWidgets.QMainWindow):
 		file.close()
 
 	def openFile(self):
+		global current_points
 		openFrom = QtWidgets.QFileDialog.getOpenFileName(self, "Open File")
 		print(openFrom)
 		file = open(openFrom[0], 'rb')
@@ -152,6 +155,8 @@ class Window(QtWidgets.QMainWindow):
 		unpacked_data = sneaklib.UnpackTileData(file.read())
 		current_points = unpacked_data[2:]
 		file.close()
+
+		self.gridScene.update(self.gridScene.sceneRect())
 
 
 
@@ -224,6 +229,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		node.EstablishInputsOutputs()
 
 	def mousePressEvent(self, event):
+		global current_points
 		#event.ignore()
 		super(GridScene, self).mousePressEvent(event)
 		self.update(self.sceneRect())
@@ -243,12 +249,11 @@ class GridScene(QtWidgets.QGraphicsScene):
 		array = [nearestMultipleX, nearestMultipleY]
 		print("DRAW MODE IS " + str(draw_mode))
 		if draw_mode == 0:
-			current_points.append(array)
+			if array not in current_points:
+				current_points.append(array)
 		elif draw_mode == 1:
-			try:
+			if array in current_points:
 				current_points.remove(array)
-			except:
-				pass
 
 	def mouseMoveEvent(self, event):
 		event.ignore()
@@ -305,7 +310,7 @@ if __name__ == '__main__':
 	global app, window, current_points
 
 	draw_mode = 0
-	current_points = send_nudes
+	current_points = []
 
 	icons_path = os.path.dirname(__file__)
 	if (sys.platform == "darwin"):
