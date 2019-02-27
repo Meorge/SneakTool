@@ -1,7 +1,5 @@
 import os
-import struct
 import sys
-import traceback
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 Qt = QtCore.Qt
