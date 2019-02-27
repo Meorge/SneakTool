@@ -4,13 +4,17 @@ import sys
 from PyQt5 import QtCore, QtGui, QtWidgets
 Qt = QtCore.Qt
 
-icons_path = os.path.dirname(__file__) + "/icons/"
+
+global icons_path
 
 class Window(QtWidgets.QMainWindow):
 	"""Main Window"""
 	
 	def __init__(self, parent=None):
 		super(Window, self).__init__(parent)
+
+		print(icons_path)
+
 		self.setupUi()
 		self.gridView = GridView()
 		
@@ -62,7 +66,7 @@ class Window(QtWidgets.QMainWindow):
 		self.verticalLayout.setObjectName("verticalLayout")
 		self.selectMoveButtom = QtWidgets.QPushButton(self.dockWidgetContents)
 		icon = QtGui.QIcon()
-		icon.addPixmap(QtGui.QPixmap(icons_path + "arrow_rl.cur"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+		icon.addPixmap(QtGui.QPixmap(icons_path + "arrow_rl.cur"), QtGui.QIcon.Normal, QtGui.QIcon.On)
 		self.selectMoveButtom.setIcon(icon)
 		self.selectMoveButtom.setIconSize(QtCore.QSize(48, 48))
 		self.selectMoveButtom.setCheckable(True)
@@ -71,7 +75,7 @@ class Window(QtWidgets.QMainWindow):
 		self.verticalLayout.addWidget(self.selectMoveButtom)
 		self.drawTilesButton = QtWidgets.QPushButton(self.dockWidgetContents)
 		icon1 = QtGui.QIcon()
-		icon1.addPixmap(QtGui.QPixmap(icons_path + "aero_pen_xl.cur"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+		icon1.addPixmap(QtGui.QPixmap(icons_path + "aero_pen_xl.cur"), QtGui.QIcon.Normal, QtGui.QIcon.On)
 		self.drawTilesButton.setIcon(icon1)
 		self.drawTilesButton.setIconSize(QtCore.QSize(48, 48))
 		self.drawTilesButton.setCheckable(True)
@@ -83,7 +87,7 @@ class Window(QtWidgets.QMainWindow):
 		self.verticalLayout_2.setObjectName("verticalLayout_2")
 		self.AddGuardButton = QtWidgets.QPushButton(self.ActorBox)
 		icon2 = QtGui.QIcon()
-		icon2.addPixmap(QtGui.QPixmap(icons_path + "764986.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+		icon2.addPixmap(QtGui.QPixmap(icons_path + "764986.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
 		self.AddGuardButton.setIcon(icon2)
 		self.AddGuardButton.setIconSize(QtCore.QSize(48, 48))
 		self.AddGuardButton.setCheckable(True)
@@ -92,7 +96,7 @@ class Window(QtWidgets.QMainWindow):
 		self.verticalLayout_2.addWidget(self.AddGuardButton)
 		self.AddCameraButton = QtWidgets.QPushButton(self.ActorBox)
 		icon3 = QtGui.QIcon()
-		icon3.addPixmap(QtGui.QPixmap(icons_path + "584abe7e2912007028bd9330.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+		icon3.addPixmap(QtGui.QPixmap(icons_path + "584abe7e2912007028bd9330.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
 		self.AddCameraButton.setIcon(icon3)
 		self.AddCameraButton.setIconSize(QtCore.QSize(48, 48))
 		self.AddCameraButton.setCheckable(True)
@@ -101,7 +105,7 @@ class Window(QtWidgets.QMainWindow):
 		self.verticalLayout_2.addWidget(self.AddCameraButton)
 		self.AddGemstoneButton = QtWidgets.QPushButton(self.ActorBox)
 		icon4 = QtGui.QIcon()
-		icon4.addPixmap(QtGui.QPixmap(icons_path + "45130c6d03b2256e6615f2a696195f41-diamond-gem-flat-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+		icon4.addPixmap(QtGui.QPixmap(icons_path + "45130c6d03b2256e6615f2a696195f41-diamond-gem-flat-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
 		self.AddGemstoneButton.setIcon(icon4)
 		self.AddGemstoneButton.setIconSize(QtCore.QSize(48, 48))
 		self.AddGemstoneButton.setCheckable(True)
@@ -110,7 +114,7 @@ class Window(QtWidgets.QMainWindow):
 		self.verticalLayout_2.addWidget(self.AddGemstoneButton)
 		self.AddDoorButton = QtWidgets.QPushButton(self.ActorBox)
 		icon5 = QtGui.QIcon()
-		icon5.addPixmap(QtGui.QPixmap(icons_path + "Door-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+		icon5.addPixmap(QtGui.QPixmap(icons_path + "Door-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
 		self.AddDoorButton.setIcon(icon5)
 		self.AddDoorButton.setIconSize(QtCore.QSize(48, 48))
 		self.AddDoorButton.setCheckable(True)
@@ -119,7 +123,7 @@ class Window(QtWidgets.QMainWindow):
 		self.verticalLayout_2.addWidget(self.AddDoorButton)
 		self.AddTrashCanButton = QtWidgets.QPushButton(self.ActorBox)
 		icon6 = QtGui.QIcon()
-		icon6.addPixmap(QtGui.QPixmap(icons_path + "698410_trash_512x512.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+		icon6.addPixmap(QtGui.QPixmap(icons_path + "698410_trash_512x512.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
 		self.AddTrashCanButton.setIcon(icon6)
 		self.AddTrashCanButton.setIconSize(QtCore.QSize(48, 48))
 		self.AddTrashCanButton.setCheckable(True)
@@ -128,7 +132,7 @@ class Window(QtWidgets.QMainWindow):
 		self.verticalLayout_2.addWidget(self.AddTrashCanButton)
 		self.AddGemSackButton = QtWidgets.QPushButton(self.ActorBox)
 		icon7 = QtGui.QIcon()
-		icon7.addPixmap(QtGui.QPixmap(icons_path + "Money-Bag-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+		icon7.addPixmap(QtGui.QPixmap(icons_path + "Money-Bag-icon.png"), QtGui.QIcon.Normal, QtGui.QIcon.On)
 		self.AddGemSackButton.setIcon(icon7)
 		self.AddGemSackButton.setIconSize(QtCore.QSize(48, 48))
 		self.AddGemSackButton.setCheckable(True)
@@ -330,6 +334,12 @@ class GridScene(QtWidgets.QGraphicsScene):
 
 if __name__ == '__main__':
 	global app, window
+	icons_path = os.path.dirname(__file__)
+	if (sys.platform == "darwin"):
+		icons_path += "icons/"
+	else:
+		icons_path += "/icons/"
+
 	app = QtWidgets.QApplication(sys.argv)
 
 	window = Window()
