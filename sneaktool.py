@@ -13,7 +13,7 @@ global current_points
 
 send_nudes = [[200.0, 240.0], [160.0, 240.0], [120.0, 240.0], [120.0, 280.0], [120.0, 320.0], [160.0, 320.0], [200.0, 320.0], [200.0, 360.0], [200.0, 400.0], [160.0, 400.0], [120.0, 400.0], [280.0, 240.0], [280.0, 280.0], [280.0, 320.0], [280.0, 360.0], [280.0, 400.0], [320.0, 400.0], [360.0, 400.0], [320.0, 320.0], [360.0, 320.0], [320.0, 240.0], [360.0, 240.0], [440.0, 240.0], [440.0, 280.0], [440.0, 320.0], [440.0, 360.0], [440.0, 400.0], [480.0, 280.0], [520.0, 320.0], [560.0, 360.0], [560.0, 400.0], [560.0, 320.0], [560.0, 280.0], [560.0, 240.0], [640.0, 240.0], [640.0, 280.0], [640.0, 320.0], [640.0, 360.0], [640.0, 400.0], [680.0, 240.0], [720.0, 280.0], [720.0, 320.0], [720.0, 360.0], [680.0, 400.0], [80.0, 480.0], [80.0, 520.0], [80.0, 560.0], [80.0, 600.0], [80.0, 640.0], [120.0, 520.0], [160.0, 560.0], [200.0, 480.0], [200.0, 520.0], [200.0, 560.0], [200.0, 600.0], [200.0, 640.0], [280.0, 480.0], [280.0, 520.0], [280.0, 560.0], [280.0, 600.0], [280.0, 640.0], [320.0, 640.0], [360.0, 640.0], [360.0, 600.0], [360.0, 560.0], [360.0, 520.0], [360.0, 480.0], [440.0, 480.0], [440.0, 520.0], [440.0, 560.0], [440.0, 600.0], [440.0, 640.0], [480.0, 480.0], [520.0, 520.0], [520.0, 560.0], [520.0, 600.0], [480.0, 640.0], [600.0, 480.0], [600.0, 520.0], [600.0, 560.0], [600.0, 600.0], [600.0, 640.0], [640.0, 640.0], [680.0, 640.0], [640.0, 560.0], [680.0, 560.0], [680.0, 480.0], [640.0, 480.0], [840.0, 480.0], [800.0, 480.0], [760.0, 480.0], [760.0, 520.0], [760.0, 560.0], [800.0, 560.0], [840.0, 560.0], [840.0, 600.0], [840.0, 640.0], [800.0, 640.0], [760.0, 640.0]]
 
-#square_button_style = "QPushButton {width: 20; height: 20;}"
+square_button_style = "QPushButton {margin: 1px; padding: 1px; border: 1px; background-color: grey; image-position: center center; text-align: center;}"
 
 CELL_SIZE = 40
 
@@ -22,7 +22,14 @@ global draw_mode
 Draw modes
 0 = draw
 1 = erase
-2 = sprites?
+"""
+
+global obj_mode
+"""
+Object modes
+0 = room
+1 = door
+2 = sprite
 """
 
 
@@ -44,7 +51,7 @@ class Window(QtWidgets.QMainWindow):
 		self.meorgeUI()
 		self.gridView = GridView()
 		
-		self.gridScene = GridScene()
+		self.gridScene = GridScene(parent=self)
 		
 		self.gridView.setScene(self.gridScene)
 		
@@ -67,30 +74,42 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPalette.setWindowTitle("Tools")
 		self.toolPaletteWidget = QtWidgets.QWidget()
 
-		self.toolPaletteWidget_DrawButton = QtWidgets.QPushButton()
+		self.toolPaletteWidget_DrawButton = QtWidgets.QPushButton("Draw")
 		self.toolPaletteWidget_DrawButtonIco = QtGui.QIcon(icons_path + "aero_pen_xl.cur")
 		#self.toolPaletteWidget_DrawButton.align
 		self.toolPaletteWidget_DrawButton.setIcon(self.toolPaletteWidget_DrawButtonIco)
+		
 		#self.toolPaletteWidget_DrawButton.setFlat(True)
-		self.toolPaletteWidget_DrawButton.setFixedSize(45,40)
-		#self.toolPaletteWidget_DrawButton.setCheckable(True)
+		#self.toolPaletteWidget_DrawButton.setFixedSize(40,40)
+		#self.toolPaletteWidget_DrawButton.hasHeightForWidth()
+		self.toolPaletteWidget_DrawButton.setCheckable(True)
+		self.toolPaletteWidget_DrawButton.setAutoExclusive(True)
 		self.toolPaletteWidget_DrawButton.clicked.connect(self.EnableDrawMode)
+		#self.toolPaletteWidget_DrawButton.setStyleSheet(square_button_style)
 
 		
 
 		self.toolPaletteWidget_EraseButton = QtWidgets.QPushButton("Erase")
 		self.toolPaletteWidget_EraseButton.clicked.connect(self.EnableEraseMode)
+		#self.toolPaletteWidget_EraseButton.setStyleSheet(square_button_style)
+		#self.toolPaletteWidget_EraseButton.setFixedSize(40,40)
 
 
 
-		#self.toolPaletteWidget_EraseButton.setCheckable(True)
+		self.toolPaletteWidget_EraseButton.setCheckable(True)
+		self.toolPaletteWidget_EraseButton.setAutoExclusive(True)
 
-		self.toolPaletteWidget_MoveButton = QtWidgets.QPushButton()
+		self.toolPaletteWidget_MoveButton = QtWidgets.QPushButton("Move")
 		self.toolPaletteWidget_MoveButtonIco = QtGui.QIcon(icons_path + "arrow_rl.cur")
 		#self.toolPaletteWidget_DrawButton.align
 		self.toolPaletteWidget_MoveButton.setIcon(self.toolPaletteWidget_MoveButtonIco)
-		self.toolPaletteWidget_MoveButton.setFixedSize(45,40)
+		
+		#self.toolPaletteWidget_MoveButton.setFixedSize(45,40)
 		self.toolPaletteWidget_MoveButton.setCheckable(True)
+		self.toolPaletteWidget_MoveButton.setAutoExclusive(True)
+		#self.toolPaletteWidget_MoveButton.setFixedSize(40,40)
+		#self.toolPaletteWidget_MoveButton.setStyleSheet(square_button_style)
+
 
 		self.toolPaletteWidget_Layout = QtWidgets.QVBoxLayout()
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_MoveButton)
@@ -99,11 +118,43 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_EraseButton)
 		self.toolPaletteWidget_Layout.addSpacing(5)
 		self.toolPaletteWidget_Layout.setAlignment(Qt.AlignTop)
+		self.toolPaletteWidget_Layout.addStretch(10)
 
 		self.toolPaletteWidget.setLayout(self.toolPaletteWidget_Layout)
 		self.toolPalette.setWidget(self.toolPaletteWidget)
 		self.toolPalette.setFeatures(QtWidgets.QDockWidget.DockWidgetFloatable | QtWidgets.QDockWidget.DockWidgetMovable)
 		self.addDockWidget(Qt.LeftDockWidgetArea, self.toolPalette)
+
+
+		### OBJECT TYPE
+		self.toolPaletteWidget_ObjType = QtWidgets.QGroupBox("Type")
+		self.toolPaletteWidget_ObjType_Room = QtWidgets.QPushButton("Room")
+		self.toolPaletteWidget_ObjType_Door = QtWidgets.QPushButton("Door")
+		self.toolPaletteWidget_ObjType_Spr = QtWidgets.QPushButton("Sprite")
+
+		self.toolPaletteWidget_ObjType_Room.clicked.connect(self.SetRoomMode)
+		self.toolPaletteWidget_ObjType_Door.clicked.connect(self.SetDoorMode)
+
+
+		self.toolPaletteWidget_ObjType_Room.setCheckable(True)
+		self.toolPaletteWidget_ObjType_Door.setCheckable(True)
+		self.toolPaletteWidget_ObjType_Spr.setCheckable(True)
+		self.toolPaletteWidget_ObjType_Room.setAutoExclusive(True)
+		self.toolPaletteWidget_ObjType_Door.setAutoExclusive(True)
+		self.toolPaletteWidget_ObjType_Spr.setAutoExclusive(True)
+
+		self.toolPaletteWidget_ObjTypeLayout = QtWidgets.QVBoxLayout()
+		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Room)
+		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Door)
+		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Spr)
+
+		self.toolPaletteWidget_ObjType.setLayout(self.toolPaletteWidget_ObjTypeLayout)
+
+		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_ObjType)
+		self.toolPaletteWidget_ObjType.setAlignment(Qt.AlignBottom)
+		self.toolPaletteWidget_Layout.addChildLayout(self.toolPaletteWidget_ObjTypeLayout)
+		self.toolPaletteWidget_ObjTypeLayout.setAlignment(Qt.AlignBottom)
+
 
 
 
@@ -114,6 +165,11 @@ class Window(QtWidgets.QMainWindow):
 		self.spritePalette.setWidget(self.spritePaletteWidget)
 		self.addDockWidget(Qt.RightDockWidgetArea, self.spritePalette)
 
+
+		self.spritePaletteWidget.addItem("Gemstone")
+		self.spritePaletteWidget.addItem("Gem Sack")
+		self.spritePaletteWidget.addItem("Guard")
+		self.spritePaletteWidget.addItem("Trash Can")
 
 		### CURRENT SPRITES
 		self.currentSprites = QtWidgets.QDockWidget()
@@ -130,6 +186,10 @@ class Window(QtWidgets.QMainWindow):
 		self.setStatusBar(self.footerBar)
 
 		self.setupMenuBar()
+
+	def UpdateStatusBar(self):
+		global current_points
+		self.footerBar_label.setText(str(len(current_points)) + " rooms")
 
 
 	def setupMenuBar(self):
@@ -169,27 +229,29 @@ class Window(QtWidgets.QMainWindow):
 		file.close()
 
 		self.gridScene.update(self.gridScene.sceneRect())
+		self.UpdateStatusBar()
 
 
 
 	def EnableEraseMode(self):
 		global draw_mode
 		draw_mode = 1
-		self.toolPaletteWidget_DrawButton.setChecked(False)
-		self.toolPaletteWidget_MoveButton.setChecked(False)
-		self.toolPaletteWidget_EraseButton.setChecked(True)
-
 		print("ERASE MODE")
 		print(draw_mode)
 
 	def EnableDrawMode(self):
 		global draw_mode
 		draw_mode = 0
-		self.toolPaletteWidget_DrawButton.setChecked(True)
-		self.toolPaletteWidget_MoveButton.setChecked(False)
-		self.toolPaletteWidget_EraseButton.setChecked(False)
 
 		print("DRAW MODE")
+
+	def SetDoorMode(self):
+		global obj_mode
+		obj_mode = 1
+
+	def SetRoomMode(self):
+		global obj_mode
+		obj_mode = 0
 
 
 
@@ -232,6 +294,7 @@ class GridView(QtWidgets.QGraphicsView):
 class GridScene(QtWidgets.QGraphicsScene):
 	def __init__(self, parent=None):
 		super().__init__(parent)
+		self.parent = parent
 
 		self.setSceneRect(0, 0, 1000, 1000)
 
@@ -244,33 +307,45 @@ class GridScene(QtWidgets.QGraphicsScene):
 		global current_points
 		#event.ignore()
 		super(GridScene, self).mousePressEvent(event)
+		self.PaintOrErase(event.scenePos().x(), event.scenePos().y())
+
+	def PaintOrErase(self, fixedX, fixedY):
+		global obj_mode
 		self.update(self.sceneRect())
 
-		fixedX = event.scenePos().x()
-		fixedY = event.scenePos().y()
+		nearestMultipleX = int(CELL_SIZE * round(float(fixedX) / CELL_SIZE))
+		nearestMultipleY = int(CELL_SIZE * round(float(fixedY) / CELL_SIZE))
 
-		# nearestMultipleX = int(CELL_SIZE * round(float(fixedX) / CELL_SIZE))
-		# nearestMultipleY = int(CELL_SIZE * round(float(fixedY) / CELL_SIZE))
-
-		nearestMultipleX = fixedX - (fixedX % CELL_SIZE)
-		nearestMultipleY = fixedY - (fixedY % CELL_SIZE)
+		multDownX = fixedX - (fixedX % CELL_SIZE)
+		multDownY = fixedY - (fixedY % CELL_SIZE)
 
 		#nearestMultipleX = event.scenePos().x() + (CELL_SIZE - event.scenePos().x()) % CELL_SIZE
 		#nearestMultipleY = event.scenePos().y() + (CELL_SIZE - event.scenePos().y()) % CELL_SIZE
 
-		array = [nearestMultipleX, nearestMultipleY]
+		arrayDown = [multDownX, multDownY]
 		print("DRAW MODE IS " + str(draw_mode))
-		if draw_mode == 0:
-			if array not in current_points:
-				current_points.append(array)
-		elif draw_mode == 1:
-			if array in current_points:
-				current_points.remove(array)
+
+		if (obj_mode == 0): # door mode
+			if draw_mode == 0:
+				if arrayDown not in current_points:
+					current_points.append(arrayDown)
+			elif draw_mode == 1:
+				if arrayDown in current_points:
+					current_points.remove(arrayDown)
+		
+		elif (obj_mode == 1):
+			self.addItem(DoorItem(nearestMultipleX, nearestMultipleY - (CELL_SIZE / 8)))
+
+		self.parent.UpdateStatusBar()
+
 
 	def mouseMoveEvent(self, event):
-		event.ignore()
+		#event.ignore()
 		#print("move the scene")
 		super(GridScene, self).mouseMoveEvent(event)
+
+		if event.buttons() == Qt.LeftButton:
+			self.PaintOrErase(event.scenePos().x(), event.scenePos().y())
 
 	def drawBackground(self, painter, rect):
 		print("boopy")
@@ -315,14 +390,33 @@ class GridScene(QtWidgets.QGraphicsScene):
 			painter.drawRect(point[0], point[1], CELL_SIZE, CELL_SIZE)
 
 
+class DoorItem(QtWidgets.QGraphicsItem):
+	def __init__(self, xIn, yIn, parent=None):
+		super().__init__(parent=parent)
+		self.x = xIn
+		self.y = yIn
+
+		self.width = CELL_SIZE
+		self.height = CELL_SIZE / 4
+
+	def boundingRect(self):
+		return QtCore.QRectF(self.x, self.y, self.width, self.height)
+
+	def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
+		painter.setBrush(QtGui.QBrush(QtGui.QColor(200,200,200)))
+		painter.drawRect(self.x, self.y, CELL_SIZE, CELL_SIZE / 4)
+		#super().paint(painter, QStyleOptionGraphicsItem, widget=widget)
+
+
 
 
 
 if __name__ == '__main__':
-	global app, window, current_points
+	global app, window, current_points, obj_mode
 
 	draw_mode = 0
 	current_points = []
+	obj_mode = 0
 
 	icons_path = os.path.dirname(__file__)
 	if (sys.platform == "darwin"):
@@ -335,5 +429,3 @@ if __name__ == '__main__':
 	window = Window()
 	window.show()
 	sys.exit(app.exec_())
-
-	
