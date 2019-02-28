@@ -2,13 +2,13 @@ import os
 import sys
 import sneaklib
 
-from PyQt5 import QtCore, QtGui, QtWidgets, QtMacExtras
+from PyQt5 import QtCore, QtGui, QtWidgets#, QtMacExtras
 Qt = QtCore.Qt
 
 
 global icons_path
 
-global current_points
+global current_level
 
 
 send_nudes = [[200.0, 240.0], [160.0, 240.0], [120.0, 240.0], [120.0, 280.0], [120.0, 320.0], [160.0, 320.0], [200.0, 320.0], [200.0, 360.0], [200.0, 400.0], [160.0, 400.0], [120.0, 400.0], [280.0, 240.0], [280.0, 280.0], [280.0, 320.0], [280.0, 360.0], [280.0, 400.0], [320.0, 400.0], [360.0, 400.0], [320.0, 320.0], [360.0, 320.0], [320.0, 240.0], [360.0, 240.0], [440.0, 240.0], [440.0, 280.0], [440.0, 320.0], [440.0, 360.0], [440.0, 400.0], [480.0, 280.0], [520.0, 320.0], [560.0, 360.0], [560.0, 400.0], [560.0, 320.0], [560.0, 280.0], [560.0, 240.0], [640.0, 240.0], [640.0, 280.0], [640.0, 320.0], [640.0, 360.0], [640.0, 400.0], [680.0, 240.0], [720.0, 280.0], [720.0, 320.0], [720.0, 360.0], [680.0, 400.0], [80.0, 480.0], [80.0, 520.0], [80.0, 560.0], [80.0, 600.0], [80.0, 640.0], [120.0, 520.0], [160.0, 560.0], [200.0, 480.0], [200.0, 520.0], [200.0, 560.0], [200.0, 600.0], [200.0, 640.0], [280.0, 480.0], [280.0, 520.0], [280.0, 560.0], [280.0, 600.0], [280.0, 640.0], [320.0, 640.0], [360.0, 640.0], [360.0, 600.0], [360.0, 560.0], [360.0, 520.0], [360.0, 480.0], [440.0, 480.0], [440.0, 520.0], [440.0, 560.0], [440.0, 600.0], [440.0, 640.0], [480.0, 480.0], [520.0, 520.0], [520.0, 560.0], [520.0, 600.0], [480.0, 640.0], [600.0, 480.0], [600.0, 520.0], [600.0, 560.0], [600.0, 600.0], [600.0, 640.0], [640.0, 640.0], [680.0, 640.0], [640.0, 560.0], [680.0, 560.0], [680.0, 480.0], [640.0, 480.0], [840.0, 480.0], [800.0, 480.0], [760.0, 480.0], [760.0, 520.0], [760.0, 560.0], [800.0, 560.0], [840.0, 560.0], [840.0, 600.0], [840.0, 640.0], [800.0, 640.0], [760.0, 640.0]]
@@ -31,7 +31,6 @@ Object modes
 1 = door
 2 = sprite
 """
-
 
 
 class Window(QtWidgets.QMainWindow):
@@ -212,20 +211,23 @@ class Window(QtWidgets.QMainWindow):
 	def saveFileAs(self):
 		saveTo = QtWidgets.QFileDialog.getSaveFileName(self, "Save File")
 		print(saveTo)
+		if saveTo[0] == "": return
 		file = open(saveTo[0], 'wb')
 
-		data_to_save = sneaklib.PackTileData(current_points)
+		data_to_save = current_level.PackTileData(current_level.tiles)
 		file.write(data_to_save)
 		file.close()
 
 	def openFile(self):
-		global current_points
+		global current_level
 		openFrom = QtWidgets.QFileDialog.getOpenFileName(self, "Open File")
 		print(openFrom)
+		if openFrom[0] == "":return
 		file = open(openFrom[0], 'rb')
 
-		unpacked_data = sneaklib.UnpackTileData(file.read())
-		current_points = unpacked_data[2:]
+		current_level = sneaklib.SneakstersLevel()
+
+		unpacked_data = current_level.UnpackTileData(file.read())
 		file.close()
 
 		self.gridScene.update(self.gridScene.sceneRect())
@@ -278,7 +280,7 @@ class GridView(QtWidgets.QGraphicsView):
 		#print(event.x(), event.y())
 		
 		#self.scene().update(self.sceneRect())
-		#current_points.append([event.x(), event.y()])
+		#current_level.tiles.append([event.x(), event.y()])
 		#self.repaint(0,0,1000,1000)
 
 	def mouseMoveEvent(self, event):
@@ -296,7 +298,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		super().__init__(parent)
 		self.parent = parent
 
-		self.setSceneRect(0, 0, 1000, 1000)
+		self.setSceneRect(0, 0, 0x800, 0x800)
 
 	def addNode(self, node):
 		self.addItem(node)
@@ -304,7 +306,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		node.EstablishInputsOutputs()
 
 	def mousePressEvent(self, event):
-		global current_points
+		global current_level
 		#event.ignore()
 		super(GridScene, self).mousePressEvent(event)
 		self.PaintOrErase(event.scenePos().x(), event.scenePos().y())
@@ -316,29 +318,33 @@ class GridScene(QtWidgets.QGraphicsScene):
 		nearestMultipleX = int(CELL_SIZE * round(float(fixedX) / CELL_SIZE))
 		nearestMultipleY = int(CELL_SIZE * round(float(fixedY) / CELL_SIZE))
 
-		multDownX = fixedX - (fixedX % CELL_SIZE)
-		multDownY = fixedY - (fixedY % CELL_SIZE)
+		tileX = fixedX // CELL_SIZE
+		tileY = fixedY // CELL_SIZE
 
 		#nearestMultipleX = event.scenePos().x() + (CELL_SIZE - event.scenePos().x()) % CELL_SIZE
 		#nearestMultipleY = event.scenePos().y() + (CELL_SIZE - event.scenePos().y()) % CELL_SIZE
 
-		arrayDown = [multDownX, multDownY]
+		array = [tileX, tileY]
 		print("DRAW MODE IS " + str(draw_mode))
-
-		if (obj_mode == 0): # door mode
+		if obj_mode == 0:
 			if draw_mode == 0:
-				if arrayDown not in current_points:
-					current_points.append(arrayDown)
+				tile = current_level.TileAt(*array)
+				if not tile:
+					tile = sneaklib.Tile(*array)
+					current_level.tiles.append(tile)
+					current_level.AutoWall(tile)
 			elif draw_mode == 1:
-				if arrayDown in current_points:
-					current_points.remove(arrayDown)
-		
+				tile = current_level.TileAt(*array)
+				if tile:
+					current_level.tiles.remove(tile)
+					current_level.AutoWall(tile, True)
+
 		elif (obj_mode == 1):
 			self.addItem(DoorItem(nearestMultipleX, nearestMultipleY - (CELL_SIZE / 8)))
 
 		self.parent.UpdateStatusBar()
 
-
+		
 	def mouseMoveEvent(self, event):
 		#event.ignore()
 		#print("move the scene")
@@ -349,7 +355,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 
 	def drawBackground(self, painter, rect):
 		print("boopy")
-		print(current_points)
+		print(current_level.tiles)
 		painter.setBrush(QtGui.QBrush(QtGui.QColor(50,50,50)))
 		painter.drawRect(rect)
 
@@ -382,12 +388,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		for y in range(int(y1), int(y2 + 1), CELL_SIZE):
 			painter.drawLine(x1, y, x2, y)
 
-
-		self.squareBrush = QtGui.QBrush(QtGui.QColor(170,170,170))
-		painter.setBrush(self.squareBrush)
-		
-		for point in current_points:
-			painter.drawRect(point[0], point[1], CELL_SIZE, CELL_SIZE)
+		current_level.draw(painter, CELL_SIZE)
 
 
 class DoorItem(QtWidgets.QGraphicsItem):
@@ -412,11 +413,10 @@ class DoorItem(QtWidgets.QGraphicsItem):
 
 
 if __name__ == '__main__':
-	global app, window, current_points, obj_mode
+	global app, window, current_level
 
 	draw_mode = 0
-	current_points = []
-	obj_mode = 0
+	current_level = sneaklib.SneakstersLevel()
 
 	icons_path = os.path.dirname(__file__)
 	if (sys.platform == "darwin"):
