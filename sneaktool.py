@@ -77,9 +77,12 @@ class Window(QtWidgets.QMainWindow):
 
 		
 
+		self.toolPaletteWidget_WallsButton = QtWidgets.QPushButton("Walls")
+		self.toolPaletteWidget_WallsButton.clicked.connect(self.EnableWallMode)
+
+		
 		self.toolPaletteWidget_EraseButton = QtWidgets.QPushButton("Erase")
 		self.toolPaletteWidget_EraseButton.clicked.connect(self.EnableEraseMode)
-
 
 
 		#self.toolPaletteWidget_EraseButton.setCheckable(True)
@@ -95,6 +98,7 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_MoveButton)
 		self.toolPaletteWidget_Layout.addSpacing(5)
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_DrawButton)
+		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_WallsButton)
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_EraseButton)
 		self.toolPaletteWidget_Layout.addSpacing(5)
 		self.toolPaletteWidget_Layout.setAlignment(Qt.AlignTop)
@@ -180,6 +184,7 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_DrawButton.setChecked(False)
 		self.toolPaletteWidget_MoveButton.setChecked(False)
 		self.toolPaletteWidget_EraseButton.setChecked(True)
+		self.toolPaletteWidget_WallsButton.setChecked(False)
 
 		print("ERASE MODE")
 		print(draw_mode)
@@ -190,8 +195,21 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_DrawButton.setChecked(True)
 		self.toolPaletteWidget_MoveButton.setChecked(False)
 		self.toolPaletteWidget_EraseButton.setChecked(False)
+		self.toolPaletteWidget_WallsButton.setChecked(False)
 
 		print("DRAW MODE")
+
+	def EnableWallMode(self):
+		global draw_mode
+		draw_mode = 2
+		self.toolPaletteWidget_DrawButton.setChecked(False)
+		self.toolPaletteWidget_MoveButton.setChecked(False)
+		self.toolPaletteWidget_EraseButton.setChecked(False)
+		self.toolPaletteWidget_WallsButton.setChecked(True)
+
+		print("WALL MODE")
+		print(draw_mode)
+
 
 
 
@@ -256,6 +274,8 @@ class GridScene(QtWidgets.QGraphicsScene):
 
 		tileX = fixedX // CELL_SIZE
 		tileY = fixedY // CELL_SIZE
+		tile_x_pos = (fixedX / CELL_SIZE) % 1.0
+		tile_y_pos = (fixedY / CELL_SIZE) % 1.0
 
 		#nearestMultipleX = event.scenePos().x() + (CELL_SIZE - event.scenePos().x()) % CELL_SIZE
 		#nearestMultipleY = event.scenePos().y() + (CELL_SIZE - event.scenePos().y()) % CELL_SIZE
@@ -273,6 +293,29 @@ class GridScene(QtWidgets.QGraphicsScene):
 			if tile:
 				current_level.tiles.remove(tile)
 				current_level.AutoWall(tile, True)
+		elif draw_mode == 2:
+			tile = current_level.TileAt(*array)
+			if tile:
+				if tile_x_pos < 0.25:
+					sideTile = current_level.TileAt(tile.x-1, tile.y)
+					tile.walls[3] = not tile.walls[3]
+					if sideTile:
+						sideTile.walls[1] = tile.walls[3]
+				elif tile_x_pos >= 0.75:
+					sideTile = current_level.TileAt(tile.x+1, tile.y)
+					tile.walls[1] = not tile.walls[1]
+					if sideTile:
+						sideTile.walls[3] = tile.walls[1]
+				elif tile_y_pos < 0.25:
+					sideTile = current_level.TileAt(tile.x, tile.y-1)
+					tile.walls[0] = not tile.walls[0]
+					if sideTile:
+						sideTile.walls[2] = tile.walls[0]
+				elif tile_y_pos >= 0.75:
+					sideTile = current_level.TileAt(tile.x, tile.y+1)
+					tile.walls[2] = not tile.walls[2]
+					if sideTile:
+						sideTile.walls[0] = tile.walls[2]
 
 	def mouseMoveEvent(self, event):
 		event.ignore()
