@@ -76,9 +76,13 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_DrawButton.clicked.connect(self.EnableDrawMode)
 
 		
-
+		
 		self.toolPaletteWidget_WallsButton = QtWidgets.QPushButton("Walls")
 		self.toolPaletteWidget_WallsButton.clicked.connect(self.EnableWallMode)
+
+
+		self.toolPaletteWidget_DiagnalWallsButton = QtWidgets.QPushButton("Diagnal Walls")
+		self.toolPaletteWidget_DiagnalWallsButton.clicked.connect(self.EnableDiagnalWallMode)
 
 		
 		self.toolPaletteWidget_EraseButton = QtWidgets.QPushButton("Erase")
@@ -99,6 +103,7 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_Layout.addSpacing(5)
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_DrawButton)
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_WallsButton)
+		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_DiagnalWallsButton)
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_EraseButton)
 		self.toolPaletteWidget_Layout.addSpacing(5)
 		self.toolPaletteWidget_Layout.setAlignment(Qt.AlignTop)
@@ -129,6 +134,14 @@ class Window(QtWidgets.QMainWindow):
 		### BOTTOM BAR
 		self.footerBar = QtWidgets.QStatusBar()
 		self.footerBar_label = QtWidgets.QLabel("0 tiles, 0 sprites")
+		self.zoomInButton = QtWidgets.QPushButton("+")
+		self.zoomOutButton = QtWidgets.QPushButton("-")
+		self.zoomInButton.setFixedSize(32,32)
+		self.zoomOutButton.setFixedSize(32,32)
+		self.zoomInButton.clicked.connect(self.zoomIn)
+		self.zoomOutButton.clicked.connect(self.zoomOut)
+		self.footerBar.addWidget(self.zoomInButton)
+		self.footerBar.addWidget(self.zoomOutButton)
 		self.footerBar.addPermanentWidget(self.footerBar_label)
 		self.setStatusBar(self.footerBar)
 
@@ -185,7 +198,8 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_MoveButton.setChecked(False)
 		self.toolPaletteWidget_EraseButton.setChecked(True)
 		self.toolPaletteWidget_WallsButton.setChecked(False)
-
+		self.toolPaletteWidget_DiagnalWallsButton.setChecked(False)
+		self.gridScene.update()
 		print("ERASE MODE")
 		print(draw_mode)
 
@@ -196,9 +210,10 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_MoveButton.setChecked(False)
 		self.toolPaletteWidget_EraseButton.setChecked(False)
 		self.toolPaletteWidget_WallsButton.setChecked(False)
-
+		self.toolPaletteWidget_DiagnalWallsButton.setChecked(False)
+		self.gridScene.update()
 		print("DRAW MODE")
-
+		
 	def EnableWallMode(self):
 		global draw_mode
 		draw_mode = 2
@@ -206,9 +221,38 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_MoveButton.setChecked(False)
 		self.toolPaletteWidget_EraseButton.setChecked(False)
 		self.toolPaletteWidget_WallsButton.setChecked(True)
-
+		self.toolPaletteWidget_DiagnalWallsButton.setChecked(False)
+		self.gridScene.update()
 		print("WALL MODE")
 		print(draw_mode)
+
+	def EnableDiagnalWallMode(self):
+		global draw_mode
+		draw_mode = 3
+		self.toolPaletteWidget_DrawButton.setChecked(False)
+		self.toolPaletteWidget_MoveButton.setChecked(False)
+		self.toolPaletteWidget_EraseButton.setChecked(False)
+		self.toolPaletteWidget_WallsButton.setChecked(False)
+		self.toolPaletteWidget_DiagnalWallsButton.setChecked(True)
+		self.gridScene.update()
+		print("DIAGNAL WALL MODE")
+		print(draw_mode)
+		
+	def zoomIn(self):
+		global CELL_SIZE
+		CELL_SIZE += 10
+		self.gridScene.update()
+		self.gridScene.UpdateSize()
+		
+	def zoomOut(self):
+		global CELL_SIZE
+		CELL_SIZE -= 10
+		if CELL_SIZE < 10:
+			CELL_SIZE = 10
+		else:
+			self.gridScene.update()
+			self.gridScene.UpdateSize()
+		
 
 
 
@@ -252,9 +296,9 @@ class GridView(QtWidgets.QGraphicsView):
 class GridScene(QtWidgets.QGraphicsScene):
 	def __init__(self, parent=None):
 		super().__init__(parent)
-
-		self.setSceneRect(0, 0, 0x800, 0x800)
-
+		self.UpdateSize()
+	def UpdateSize(self):
+		self.setSceneRect(0, 0, 0x80000/CELL_SIZE, 0x80000/CELL_SIZE)
 	def addNode(self, node):
 		self.addItem(node)
 
@@ -316,11 +360,25 @@ class GridScene(QtWidgets.QGraphicsScene):
 					tile.walls[2] = not tile.walls[2]
 					if sideTile:
 						sideTile.walls[0] = tile.walls[2]
+		elif draw_mode == 3:
+			tile = current_level.TileAt(*array)
+			if tile:
+				diagDown = (tile_x_pos+tile_y_pos)/2
+				diagUp = (tile_x_pos+1-tile_y_pos)/2
+				if abs(diagUp-0.5) < 0.05:
+					tile.walls[4] = not tile.walls[4]
+				elif abs(diagDown-0.5) < 0.05:
+					tile.walls[5] = not tile.walls[5]
 
 	def mouseMoveEvent(self, event):
 		event.ignore()
 		#print("move the scene")
 		super(GridScene, self).mouseMoveEvent(event)
+
+		fixedX = event.scenePos().x()
+		fixedY = event.scenePos().y()
+		tile_x_pos = (fixedX / CELL_SIZE) % 1.0
+		tile_y_pos = (fixedY / CELL_SIZE) % 1.0
 
 	def drawBackground(self, painter, rect):
 		print("boopy")
@@ -357,7 +415,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		for y in range(int(y1), int(y2 + 1), CELL_SIZE):
 			painter.drawLine(x1, y, x2, y)
 
-		current_level.draw(painter, CELL_SIZE)
+		current_level.draw(painter, CELL_SIZE, draw_mode == 3)
 
 
 
