@@ -28,8 +28,9 @@ global obj_mode
 """
 Object modes
 0 = room
-1 = door
-2 = actor
+1 = wall
+2 = diag wall
+3 = actor
 """
 
 
@@ -82,15 +83,7 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_DrawButton.setFixedSize(45,40)
 		#self.toolPaletteWidget_DrawButton.setCheckable(True)
 		self.toolPaletteWidget_DrawButton.clicked.connect(self.EnableDrawMode)
-
 		
-		
-		self.toolPaletteWidget_WallsButton = QtWidgets.QPushButton("Walls")
-		self.toolPaletteWidget_WallsButton.clicked.connect(self.EnableWallMode)
-
-
-		self.toolPaletteWidget_DiagnalWallsButton = QtWidgets.QPushButton("Diagnal Walls")
-		self.toolPaletteWidget_DiagnalWallsButton.clicked.connect(self.EnableDiagnalWallMode)
 
 		
 		self.toolPaletteWidget_EraseButton = QtWidgets.QPushButton("Erase")
@@ -110,8 +103,6 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_MoveButton)
 		self.toolPaletteWidget_Layout.addSpacing(5)
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_DrawButton)
-		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_WallsButton)
-		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_DiagnalWallsButton)
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_EraseButton)
 		self.toolPaletteWidget_Layout.addSpacing(5)
 		self.toolPaletteWidget_Layout.setAlignment(Qt.AlignTop)
@@ -125,28 +116,39 @@ class Window(QtWidgets.QMainWindow):
 		### OBJECT TYPE
 		self.toolPaletteWidget_ObjType = QtWidgets.QGroupBox("Type")
 		self.toolPaletteWidget_ObjType_Room = QtWidgets.QPushButton("Room")
+		self.toolPaletteWidget_ObjType_Wall = QtWidgets.QPushButton("Wall")
+		self.toolPaletteWidget_ObjType_Diag = QtWidgets.QPushButton("Diagonal Wall")
 		self.toolPaletteWidget_ObjType_Door = QtWidgets.QPushButton("Door")
 		self.toolPaletteWidget_ObjType_Spr = QtWidgets.QPushButton("Actor")
 
 		self.toolPaletteWidget_ObjType_Room.clicked.connect(self.SetRoomMode)
+		self.toolPaletteWidget_ObjType_Wall.clicked.connect(self.EnableWallMode)
+		self.toolPaletteWidget_ObjType_Diag.clicked.connect(self.EnableDiagnalWallMode)
 		self.toolPaletteWidget_ObjType_Door.clicked.connect(self.SetDoorMode)
 		self.toolPaletteWidget_ObjType_Spr.clicked.connect(self.SetActorMode)
 
 
 		self.toolPaletteWidget_ObjType_Room.setCheckable(True)
+		self.toolPaletteWidget_ObjType_Wall.setCheckable(True)
+		self.toolPaletteWidget_ObjType_Diag.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Door.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Spr.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Room.setAutoExclusive(True)
+		self.toolPaletteWidget_ObjType_Wall.setAutoExclusive(True)
+		self.toolPaletteWidget_ObjType_Diag.setAutoExclusive(True)
 		self.toolPaletteWidget_ObjType_Door.setAutoExclusive(True)
 		self.toolPaletteWidget_ObjType_Spr.setAutoExclusive(True)
 
 		self.toolPaletteWidget_ObjTypeLayout = QtWidgets.QVBoxLayout()
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Room)
+		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Wall)
+		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Diag)
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Door)
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Spr)
 
 		self.toolPaletteWidget_ObjType.setLayout(self.toolPaletteWidget_ObjTypeLayout)
 
+		self.toolPaletteWidget_Layout.addStretch(10)
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_ObjType)
 		self.toolPaletteWidget_ObjType.setAlignment(Qt.AlignBottom)
 		self.toolPaletteWidget_Layout.addChildLayout(self.toolPaletteWidget_ObjTypeLayout)
@@ -252,11 +254,6 @@ class Window(QtWidgets.QMainWindow):
 	def EnableEraseMode(self):
 		global draw_mode
 		draw_mode = 1
-		self.toolPaletteWidget_DrawButton.setChecked(False)
-		self.toolPaletteWidget_MoveButton.setChecked(False)
-		self.toolPaletteWidget_EraseButton.setChecked(True)
-		self.toolPaletteWidget_WallsButton.setChecked(False)
-		self.toolPaletteWidget_DiagnalWallsButton.setChecked(False)
 		self.gridScene.update()
 		print("ERASE MODE")
 		print(draw_mode)
@@ -264,37 +261,26 @@ class Window(QtWidgets.QMainWindow):
 	def EnableDrawMode(self):
 		global draw_mode
 		draw_mode = 0
-		self.toolPaletteWidget_DrawButton.setChecked(True)
-		self.toolPaletteWidget_MoveButton.setChecked(False)
-		self.toolPaletteWidget_EraseButton.setChecked(False)
-		self.toolPaletteWidget_WallsButton.setChecked(False)
-		self.toolPaletteWidget_DiagnalWallsButton.setChecked(False)
+
 		self.gridScene.update()
 		print("DRAW MODE")
-		
+
+
 	def EnableWallMode(self):
-		global draw_mode
-		draw_mode = 2
-		self.toolPaletteWidget_DrawButton.setChecked(False)
-		self.toolPaletteWidget_MoveButton.setChecked(False)
-		self.toolPaletteWidget_EraseButton.setChecked(False)
-		self.toolPaletteWidget_WallsButton.setChecked(True)
-		self.toolPaletteWidget_DiagnalWallsButton.setChecked(False)
+		global obj_mode
+		obj_mode = 1
+
 		self.gridScene.update()
 		print("WALL MODE")
-		print(draw_mode)
+		print(obj_mode)
 
 	def EnableDiagnalWallMode(self):
-		global draw_mode
-		draw_mode = 3
-		self.toolPaletteWidget_DrawButton.setChecked(False)
-		self.toolPaletteWidget_MoveButton.setChecked(False)
-		self.toolPaletteWidget_EraseButton.setChecked(False)
-		self.toolPaletteWidget_WallsButton.setChecked(False)
-		self.toolPaletteWidget_DiagnalWallsButton.setChecked(True)
+		global obj_mode
+		obj_mode = 2
+
 		self.gridScene.update()
 		print("DIAGNAL WALL MODE")
-		print(draw_mode)
+		print(obj_mode)
 		
 	def zoomIn(self):
 		global CELL_SIZE
@@ -323,7 +309,7 @@ class Window(QtWidgets.QMainWindow):
 		global obj_mode
 
 		print("ACTOR MODE ACTIVATE")
-		obj_mode = 2
+		obj_mode = 3
 
 
 
@@ -409,39 +395,39 @@ class GridScene(QtWidgets.QGraphicsScene):
 				if tile:
 					current_level.tiles.remove(tile)
 					current_level.AutoWall(tile, True)
-			elif draw_mode == 2:
-				tile = current_level.TileAt(*array)
-				if tile:
-					if tile_x_pos < 0.25:
-						sideTile = current_level.TileAt(tile.x-1, tile.y)
-						tile.walls[3] = not tile.walls[3]
-						if sideTile:
-							sideTile.walls[1] = tile.walls[3]
-					elif tile_x_pos >= 0.75:
-						sideTile = current_level.TileAt(tile.x+1, tile.y)
-						tile.walls[1] = not tile.walls[1]
-						if sideTile:
-							sideTile.walls[3] = tile.walls[1]
-					elif tile_y_pos < 0.25:
-						sideTile = current_level.TileAt(tile.x, tile.y-1)
-						tile.walls[0] = not tile.walls[0]
-						if sideTile:
-							sideTile.walls[2] = tile.walls[0]
-					elif tile_y_pos >= 0.75:
-						sideTile = current_level.TileAt(tile.x, tile.y+1)
-						tile.walls[2] = not tile.walls[2]
-						if sideTile:
-							sideTile.walls[0] = tile.walls[2]
-			elif draw_mode == 3:
-				tile = current_level.TileAt(*array)
-				if tile:
-					diagDown = (tile_x_pos+tile_y_pos)/2
-					diagUp = (tile_x_pos+1-tile_y_pos)/2
-					if abs(diagUp-0.5) < 0.05:
-						tile.walls[4] = not tile.walls[4]
-					elif abs(diagDown-0.5) < 0.05:
-						tile.walls[5] = not tile.walls[5]
+		elif obj_mode == 1:
+			tile = current_level.TileAt(*array)
+			if tile:
+				if tile_x_pos < 0.25:
+					sideTile = current_level.TileAt(tile.x-1, tile.y)
+					tile.walls[3] = not tile.walls[3]
+					if sideTile:
+						sideTile.walls[1] = tile.walls[3]
+				elif tile_x_pos >= 0.75:
+					sideTile = current_level.TileAt(tile.x+1, tile.y)
+					tile.walls[1] = not tile.walls[1]
+					if sideTile:
+						sideTile.walls[3] = tile.walls[1]
+				elif tile_y_pos < 0.25:
+					sideTile = current_level.TileAt(tile.x, tile.y-1)
+					tile.walls[0] = not tile.walls[0]
+					if sideTile:
+						sideTile.walls[2] = tile.walls[0]
+				elif tile_y_pos >= 0.75:
+					sideTile = current_level.TileAt(tile.x, tile.y+1)
+					tile.walls[2] = not tile.walls[2]
+					if sideTile:
+						sideTile.walls[0] = tile.walls[2]
 		elif obj_mode == 2:
+			tile = current_level.TileAt(*array)
+			if tile:
+				diagDown = (tile_x_pos+tile_y_pos)/2
+				diagUp = (tile_x_pos+1-tile_y_pos)/2
+				if abs(diagUp-0.5) < 0.05:
+					tile.walls[4] = not tile.walls[4]
+				elif abs(diagDown-0.5) < 0.05:
+					tile.walls[5] = not tile.walls[5]
+		elif obj_mode == 3:
 			gem = current_level.GemstoneAt(*array)
 			if draw_mode == 0:
 				if not gem:
