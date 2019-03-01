@@ -38,10 +38,13 @@ class Tile(SneakObj):
 	def __init__(self, x, y, flags = 0):
 		super(Tile, self).__init__(x, y)
 		self.walls = [(flags & 1) != 0, ((flags>>1) & 1) != 0, ((flags>>2) & 1) != 0, ((flags>>3) & 1) != 0, ((flags>>4) & 1) != 0, ((flags>>5) & 1) != 0]
+		self.shape = (flags>>6)%4
+
 	def flags(self):
 		flag = 0
 		for i in range(len(self.walls)):
 			flag |= self.walls[i] << i
+		flag |= self.shape << 6
 		return flag
 		
 	def drawDiagnalWalls(self,painter,dx,dy,size, show_disabled):
@@ -55,7 +58,16 @@ class Tile(SneakObj):
 		painter.setPen(self.clearPen)
 		dx = self.x*size
 		dy = self.y*size
-		painter.drawRect(dx, dy, size, size)
+		if self.shape == 0:
+			painter.drawRect(dx, dy, size, size)
+		elif self.shape == 1:
+			painter.drawPolygon(QtCore.QPoint(dx, dy), QtCore.QPoint(dx+size-1, dy), QtCore.QPoint(dx, dy+size-1))
+		elif self.shape == 2:
+			painter.drawPolygon(QtCore.QPoint(dx+size-1, dy), QtCore.QPoint(dx+size-1, dy+size-1), QtCore.QPoint(dx, dy))
+		elif self.shape == 3:
+			painter.drawPolygon(QtCore.QPoint(dx+size-1, dy), QtCore.QPoint(dx+size-1, dy+size-1), QtCore.QPoint(dx, dy+size-1))
+		elif self.shape == 4:
+			painter.drawPolygon(QtCore.QPoint(dx+size-1, dy+size-1), QtCore.QPoint(dx, dy+size-1), QtCore.QPoint(dx, dy))
 		painter.setPen(self.wallPen)
 		if self.walls[0]:
 			painter.drawLine(dx,		dy,			dx+size-1,	dy)
@@ -102,6 +114,28 @@ class SneakstersLevel:
 		tileBottom = self.TileAt(tile.x, tile.y+1)
 		tileLeft = self.TileAt(tile.x-1, tile.y)
 		
+		if tileTop:
+			if \
+				tileTop.shape == 1 or\
+				tileTop.shape == 2:
+				tileTop = None
+		if tileRight:
+			if \
+				tileRight.shape == 2 or\
+				tileRight.shape == 3:
+				tileRight = None
+		if tileBottom:
+			if \
+				tileBottom.shape == 3 or\
+				tileBottom.shape == 4:
+				tileBottom = None
+		if tileLeft:
+			if \
+				tileLeft.shape == 4 or\
+				tileLeft.shape == 1:
+				tileLeft = None
+				
+
 		if removing:
 			if tileTop:
 				tileTop.walls[2] = True
@@ -135,6 +169,22 @@ class SneakstersLevel:
 			tile.walls[3] = tileLeft.walls[1] = False
 		else:
 			tile.walls[3] = True
+
+		if tile.shape == 1:
+			tile.walls[1] = False
+			tile.walls[2] = False
+
+		elif tile.shape == 2:
+			tile.walls[2] = False
+			tile.walls[3] = False
+
+		elif tile.shape == 3:
+			tile.walls[0] = False
+			tile.walls[3] = False
+
+		elif tile.shape == 4:
+			tile.walls[0] = False
+			tile.walls[1] = False
 
 
 	def draw(self, painter, size, show_diag_walls = False):
