@@ -1,13 +1,32 @@
 import struct
+import os, sys
 import binascii
 from PyQt5 import QtCore, QtGui, QtWidgets #, QtMacExtras
 
+size = 40
 
 class SneakObj():
 	def __init__(self, x, y):
 		self.x = x
 		self.y = y
 		#Do you want a Z for floors?
+		# - probably not necessary right now
+
+class Actor(SneakObj):
+	def __init__(self, x, y):
+		super().__init__(x, y)
+
+
+class Gemstone(Actor):
+	def __init__(self, x, y, graphicsItem):
+		super().__init__(x, y)
+		self.graphicsItem = graphicsItem
+
+	def boundingRect(self):
+		return QtCore.QRectF(self.x * size, self.y * size, size, size)
+
+	def draw(self, painter, size):
+		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + "official_sneaksters/gem.png"))
 
 
 
@@ -18,11 +37,13 @@ class Tile(SneakObj):
 	def __init__(self, x, y, flags = 0):
 		super(Tile, self).__init__(x, y)
 		self.walls = [(flags & 1) != 0, ((flags>>1) & 1) != 0, ((flags>>2) & 1) != 0, ((flags>>3) & 1) != 0]
+
 	def flags(self):
 		flag = 0
 		for i in range(len(self.walls)):
 			flag |= self.walls[i] << i
 		return flag;
+
 	def draw(self, painter, size):
 		painter.setBrush(self.squareBrush)
 		painter.setPen(self.clearPen)
@@ -47,6 +68,7 @@ class SneakstersLevel:
 		super().__init__()
 
 		self.tiles = []
+		self.gemstones = []
 
 		#glarp = self.PackTileData(self.send_nudes)
 		#print(self.UnpackTileData(glarp))
@@ -55,6 +77,13 @@ class SneakstersLevel:
 		for tile in self.tiles:
 			if tile.x == x and tile.y == y:
 				return tile
+		return None
+
+	def GemstoneAt(self, x, y):
+		for gem in self.gemstones:
+			if gem.x == x and gem.y == y:
+				return gem
+		return None
 
 	def AutoWall(self, tile, removing = False):
 		tileTop = self.TileAt(tile.x, tile.y-1)
@@ -101,6 +130,9 @@ class SneakstersLevel:
 		for tile in self.tiles:
 			tile.draw(painter, size)
 
+		for gem in self.gemstones:
+			gem.draw(painter, size)
+
 	def PackTileData(self, tile_data):
 		numberOfTiles = len(tile_data)
 
@@ -139,3 +171,9 @@ class SneakstersLevel:
 
 
 #print(len(send_nudes))
+
+icons_path = os.path.dirname(__file__)
+if (sys.platform == "darwin"):
+	icons_path += "icons/"
+else:
+	icons_path += "/icons/"

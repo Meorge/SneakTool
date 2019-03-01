@@ -29,7 +29,7 @@ global obj_mode
 Object modes
 0 = room
 1 = door
-2 = sprite
+2 = actor
 """
 
 
@@ -39,7 +39,8 @@ class Window(QtWidgets.QMainWindow):
 	
 	
 	def __init__(self, parent=None):
-
+		global obj_mode
+		obj_mode = 0
 
 		super(Window, self).__init__(parent)
 		
@@ -129,10 +130,11 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_ObjType = QtWidgets.QGroupBox("Type")
 		self.toolPaletteWidget_ObjType_Room = QtWidgets.QPushButton("Room")
 		self.toolPaletteWidget_ObjType_Door = QtWidgets.QPushButton("Door")
-		self.toolPaletteWidget_ObjType_Spr = QtWidgets.QPushButton("Sprite")
+		self.toolPaletteWidget_ObjType_Spr = QtWidgets.QPushButton("Actor")
 
 		self.toolPaletteWidget_ObjType_Room.clicked.connect(self.SetRoomMode)
 		self.toolPaletteWidget_ObjType_Door.clicked.connect(self.SetDoorMode)
+		self.toolPaletteWidget_ObjType_Spr.clicked.connect(self.SetActorMode)
 
 
 		self.toolPaletteWidget_ObjType_Room.setCheckable(True)
@@ -157,38 +159,47 @@ class Window(QtWidgets.QMainWindow):
 
 
 
-		### SPRITE LIST
-		self.spritePalette = QtWidgets.QDockWidget()
-		self.spritePalette.setWindowTitle("Sprite Palette")
-		self.spritePaletteWidget = QtWidgets.QListWidget()
-		self.spritePalette.setWidget(self.spritePaletteWidget)
-		self.addDockWidget(Qt.RightDockWidgetArea, self.spritePalette)
+		### actor LIST
+		self.actorPalette = QtWidgets.QDockWidget()
+		self.actorPalette.setWindowTitle("Actor Palette")
+		self.actorPaletteWidget = QtWidgets.QListWidget()
+		self.actorPalette.setWidget(self.actorPaletteWidget)
+		self.addDockWidget(Qt.RightDockWidgetArea, self.actorPalette)
 
 
-		self.spritePaletteWidget.addItem("Gemstone")
-		self.spritePaletteWidget.addItem("Gem Sack")
-		self.spritePaletteWidget.addItem("Guard")
-		self.spritePaletteWidget.addItem("Trash Can")
+		self.actorPaletteWidget.addItem("Gemstone")
+		self.actorPaletteWidget.addItem("Gem Sack")
+		self.actorPaletteWidget.addItem("Guard")
+		self.actorPaletteWidget.addItem("Trash Can")
 
-		### CURRENT SPRITES
-		self.currentSprites = QtWidgets.QDockWidget()
-		self.currentSprites.setWindowTitle("Current Sprites")
-		self.currentSpritesWidget = QtWidgets.QListWidget()
-		self.currentSprites.setWidget(self.currentSpritesWidget)
-		self.addDockWidget(Qt.RightDockWidgetArea, self.currentSprites)
+		### CURRENT actorS
+		self.currentActors = QtWidgets.QDockWidget()
+		self.currentActors.setWindowTitle("Current actors")
+		self.currentActorsWidget = QtWidgets.QTreeWidget()
+		self.currentActors.setWidget(self.currentActorsWidget)
+		self.addDockWidget(Qt.RightDockWidgetArea, self.currentActors)
+
+		self.currentActorsWidget.setHeaderHidden(True)
+
+		self.currentActorsWidget_Gems = QtWidgets.QTreeWidgetItem()
+		self.currentActorsWidget_Gems.setText(0, "Gemstones")
+
+		#self.currentActorsWidget_Gems.set
+
+		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_Gems)
 
 
 		### BOTTOM BAR
 		self.footerBar = QtWidgets.QStatusBar()
-		self.footerBar_label = QtWidgets.QLabel("0 tiles, 0 sprites")
+		self.footerBar_label = QtWidgets.QLabel("0 tiles, 0 actors")
 		self.footerBar.addPermanentWidget(self.footerBar_label)
 		self.setStatusBar(self.footerBar)
 
 		self.setupMenuBar()
 
 	def UpdateStatusBar(self):
-		global current_points
-		self.footerBar_label.setText(str(len(current_points)) + " rooms")
+		global current_level
+		self.footerBar_label.setText(str(len(current_level.tiles)) + " rooms")
 
 
 	def setupMenuBar(self):
@@ -254,6 +265,10 @@ class Window(QtWidgets.QMainWindow):
 	def SetRoomMode(self):
 		global obj_mode
 		obj_mode = 0
+
+	def SetActorMode(self):
+		global obj_mode
+		obj_mode = 2
 
 
 
@@ -339,12 +354,31 @@ class GridScene(QtWidgets.QGraphicsScene):
 					current_level.tiles.remove(tile)
 					current_level.AutoWall(tile, True)
 
-		elif (obj_mode == 1):
-			self.addItem(DoorItem(nearestMultipleX, nearestMultipleY - (CELL_SIZE / 8)))
+		elif (obj_mode == 1): # painting a door
+			self.addItem(DoorItem(tileX, tileY - (CELL_SIZE / 8)))
 
+		elif (obj_mode == 2): # painting a actor
+			gem = current_level.GemstoneAt(*array)
+			if draw_mode == 0:
+				if not gem:
+
+					## At present the GemstoneItem (graphical) is different from the data-structure
+					## I tried to follow the way you did the tiles, where their data-structures and draw
+					## functions were together, but they weren't painting. Until we figure it out, this will
+					## work well enough.
+					gem = sneaklib.Gemstone(*array, GemstoneItem(tileX, tileY))
+					current_level.gemstones.append(gem)
+
+
+					self.addItem(gem.graphicsItem)
+			elif draw_mode == 1:
+				if gem:
+					current_level.gemstones.remove(gem)
+					self.removeItem(gem.graphicsItem)
+			print(current_level.gemstones)
 		self.parent.UpdateStatusBar()
 
-		
+
 	def mouseMoveEvent(self, event):
 		#event.ignore()
 		#print("move the scene")
@@ -354,8 +388,8 @@ class GridScene(QtWidgets.QGraphicsScene):
 			self.PaintOrErase(event.scenePos().x(), event.scenePos().y())
 
 	def drawBackground(self, painter, rect):
-		print("boopy")
-		print(current_level.tiles)
+		#print("boopy")
+		#print(current_level.tiles)
 		painter.setBrush(QtGui.QBrush(QtGui.QColor(50,50,50)))
 		painter.drawRect(rect)
 
@@ -407,6 +441,18 @@ class DoorItem(QtWidgets.QGraphicsItem):
 		painter.setBrush(QtGui.QBrush(QtGui.QColor(200,200,200)))
 		painter.drawRect(self.x, self.y, CELL_SIZE, CELL_SIZE / 4)
 		#super().paint(painter, QStyleOptionGraphicsItem, widget=widget)
+
+class GemstoneItem(QtWidgets.QGraphicsItem):
+	def __init__(self, xIn, yIn, parent=None):
+		super().__init__(parent=parent)
+		self.x = xIn
+		self.y = yIn
+
+	def boundingRect(self):
+		return QtCore.QRectF(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+
+	def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
+		painter.drawPixmap(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE, QtGui.QPixmap(icons_path + "official_sneaksters/gem.png"))
 
 
 
