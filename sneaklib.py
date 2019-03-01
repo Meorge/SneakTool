@@ -33,18 +33,24 @@ class Gemstone(Actor):
 class Tile(SneakObj):
 	squareBrush = QtGui.QBrush(QtGui.QColor(170,170,170))
 	wallPen = QtGui.QPen(QtGui.QColor(240,0,0), 4)
+	diagWallPen = QtGui.QPen(QtGui.QColor(0,0,240), 4)
 	clearPen = QtGui.QPen(QtGui.QColor(0,0,0,48))
 	def __init__(self, x, y, flags = 0):
 		super(Tile, self).__init__(x, y)
-		self.walls = [(flags & 1) != 0, ((flags>>1) & 1) != 0, ((flags>>2) & 1) != 0, ((flags>>3) & 1) != 0]
-
+		self.walls = [(flags & 1) != 0, ((flags>>1) & 1) != 0, ((flags>>2) & 1) != 0, ((flags>>3) & 1) != 0, ((flags>>4) & 1) != 0, ((flags>>5) & 1) != 0]
 	def flags(self):
 		flag = 0
 		for i in range(len(self.walls)):
 			flag |= self.walls[i] << i
-		return flag;
+		return flag
+		
+	def drawDiagnalWalls(self,painter,dx,dy,size, show_disabled):
+		if self.walls[4] ^ show_disabled:
+			painter.drawLine(dx,		dy,			dx+size-1,	dy+size-1)
+		if self.walls[5] ^ show_disabled:
+			painter.drawLine(dx,		dy+size-1,	dx+size-1,	dy)
 
-	def draw(self, painter, size):
+	def draw(self, painter, size, show_diag_walls = False):
 		painter.setBrush(self.squareBrush)
 		painter.setPen(self.clearPen)
 		dx = self.x*size
@@ -59,6 +65,11 @@ class Tile(SneakObj):
 			painter.drawLine(dx+size-1,	dy+size-1,	dx,			dy+size-1)
 		if self.walls[3]:
 			painter.drawLine(dx,		dy+size-1,	dx,			dy)
+		if show_diag_walls:
+			painter.setPen(self.clearPen)
+			self.drawDiagnalWalls(painter,dx,dy,size, show_diag_walls)
+		painter.setPen(self.diagWallPen)
+		self.drawDiagnalWalls(painter,dx,dy,size, False)
 
 
 class SneakstersLevel:
@@ -126,9 +137,9 @@ class SneakstersLevel:
 			tile.walls[3] = True
 
 
-	def draw(self, painter, size):
+	def draw(self, painter, size, show_diag_walls = False):
 		for tile in self.tiles:
-			tile.draw(painter, size)
+			tile.draw(painter, size, show_diag_walls)
 
 		for gem in self.gemstones:
 			gem.draw(painter, size)
