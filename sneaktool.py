@@ -51,7 +51,7 @@ class Window(QtWidgets.QMainWindow):
 		self.meorgeUI()
 		self.gridView = GridView()
 		
-		self.gridScene = GridScene()
+		self.gridScene = GridScene(parent=self)
 		
 		self.gridView.setScene(self.gridScene)
 		
@@ -310,11 +310,19 @@ class Window(QtWidgets.QMainWindow):
 		else:
 			self.gridScene.update()
 			self.gridScene.UpdateSize()
-		
 
+	def SetRoomMode(self):
+		global obj_mode
+		obj_mode = 0
+
+	def SetDoorMode(self):
+		global obj_mode
+		obj_mode = 1
 
 	def SetActorMode(self):
 		global obj_mode
+
+		print("ACTOR MODE ACTIVATE")
 		obj_mode = 2
 
 
@@ -358,6 +366,7 @@ class GridView(QtWidgets.QGraphicsView):
 class GridScene(QtWidgets.QGraphicsScene):
 	def __init__(self, parent=None):
 		super().__init__(parent)
+		self.parent = parent
 		self.UpdateSize()
 	def UpdateSize(self):
 		self.setSceneRect(0, 0, 0x80000/CELL_SIZE, 0x80000/CELL_SIZE)
@@ -432,7 +441,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 						tile.walls[4] = not tile.walls[4]
 					elif abs(diagDown-0.5) < 0.05:
 						tile.walls[5] = not tile.walls[5]
-		elif obj_mode == 1:
+		elif obj_mode == 2:
 			gem = current_level.GemstoneAt(*array)
 			if draw_mode == 0:
 				if not gem:
@@ -451,6 +460,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 					current_level.gemstones.remove(gem)
 					self.removeItem(gem.graphicsItem)
 			print(current_level.gemstones)
+
 		self.parent.UpdateStatusBar()
 
 	def mouseMoveEvent(self, event):
