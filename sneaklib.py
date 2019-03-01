@@ -43,7 +43,7 @@ class Tile(SneakObj):
 		for i in range(len(self.walls)):
 			flag |= self.walls[i] << i
 		return flag
-		
+
 	def drawDiagnalWalls(self,painter,dx,dy,size, show_disabled):
 		if self.walls[4] ^ show_disabled:
 			painter.drawLine(dx,		dy,			dx+size-1,	dy+size-1)
@@ -144,8 +144,8 @@ class SneakstersLevel:
 		for gem in self.gemstones:
 			gem.draw(painter, size)
 
-	def PackTileData(self, tile_data):
-		numberOfTiles = len(tile_data)
+	def PackTileData(self):
+		numberOfTiles = len(self.tiles)
 
 		firstPacker = struct.Struct('4sI')
 
@@ -179,6 +179,48 @@ class SneakstersLevel:
 			self.tiles.append(tile)
 		#print(header)
 		#print(dataOut)
+
+
+	def PackGemstoneData(self):
+		headerPacker = struct.Struct('4sI')
+		header = (b"GEMS", len(self.gemstones))
+
+		packed = headerPacker.pack(*header)
+
+		for gem in self.gemstones:
+			gemPacker = struct.Struct('HHH')
+			gemData = (int(gem.x), int(gem.y), 0) # including a flag int just in case we wanna add flags to gems
+			packed += gemPacker.pack(*gemData)
+
+		return packed
+
+	def UnpackGemstoneData(self, data):
+		headerUnpacker = struct.Struct('4sI')
+
+		gemHeader = []
+		gemHeader = headerUnpacker.unpack(data[:8])
+
+		numberOfGems = gemHeader[1]
+
+		for i in range(numberOfGems):
+			gemUnpacker = struct.Struct('HHH')
+
+			unpacked = gemUnpacker.unpack_from(data, (8 + gemUnpacker.size * i))
+			gem = Gemstone(unpacked[0], unpacked[1], None)
+			self.gemstones.append(gem)
+
+	def PackLevelData(self):
+		roomData = self.PackTileData()
+		gemData = self.PackGemstoneData()
+
+		lengthOfRoomData = len(roomData)
+		lengthOfGemData = len(gemData)
+
+		headerPacker = struct.Struct('4sII')
+		
+
+
+
 
 
 #print(len(send_nudes))

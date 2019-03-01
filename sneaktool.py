@@ -244,7 +244,7 @@ class Window(QtWidgets.QMainWindow):
 
 		current_level = sneaklib.SneakstersLevel()
 
-		unpacked_data = current_level.UnpackTileData(file.read())
+		current_level.UnpackTileData(file.read())
 		file.close()
 
 		self.gridScene.update(self.gridScene.sceneRect())
@@ -301,15 +301,32 @@ class Window(QtWidgets.QMainWindow):
 		global obj_mode
 		obj_mode = 0
 
+		self.gridScene.update()
+
 	def SetDoorMode(self):
 		global obj_mode
 		obj_mode = 1
+		self.gridScene.update()
 
 	def SetActorMode(self):
 		global obj_mode
 
+		self.gridScene.update()
+
 		print("ACTOR MODE ACTIVATE")
 		obj_mode = 3
+
+
+	def UpdateGemstoneList(self):
+		for i in reversed(range(self.currentActorsWidget_Gems.childCount())):
+			self.currentActorsWidget_Gems.removeChild(self.currentActorsWidget_Gems.child(i))
+
+		for g in current_level.gemstones:
+			newItem = QtWidgets.QTreeWidgetItem()
+			newItem.setText(0, "(" + str(g.x) + ", " + str(g.y) + ")")
+			self.currentActorsWidget_Gems.addChild(newItem)
+		
+		self.currentActorsWidget_Gems.setText(0, "Gemstones (" + str(len(current_level.gemstones)) + ")")
 
 
 
@@ -445,6 +462,8 @@ class GridScene(QtWidgets.QGraphicsScene):
 				if gem:
 					current_level.gemstones.remove(gem)
 					self.removeItem(gem.graphicsItem)
+
+			self.parent.UpdateGemstoneList()
 			print(current_level.gemstones)
 
 		self.parent.UpdateStatusBar()
