@@ -16,6 +16,7 @@ send_nudes = [[200.0, 240.0], [160.0, 240.0], [120.0, 240.0], [120.0, 280.0], [1
 #square_button_style = "QPushButton {width: 20; height: 20;}"
 
 CELL_SIZE = 40
+#CURRENT_FLOOR = 0
 
 global draw_mode
 """
@@ -116,31 +117,40 @@ class Window(QtWidgets.QMainWindow):
 		### OBJECT TYPE
 		self.toolPaletteWidget_ObjType = QtWidgets.QGroupBox("Type")
 		self.toolPaletteWidget_ObjType_Room = QtWidgets.QPushButton("Room")
+		self.toolPaletteWidget_ObjType_FloorShape = QtWidgets.QPushButton("Floor Shape")
 		self.toolPaletteWidget_ObjType_Wall = QtWidgets.QPushButton("Wall")
 		self.toolPaletteWidget_ObjType_Diag = QtWidgets.QPushButton("Diagonal Wall")
 		self.toolPaletteWidget_ObjType_Door = QtWidgets.QPushButton("Door")
 		self.toolPaletteWidget_ObjType_Spr = QtWidgets.QPushButton("Actor")
-
+		
 		self.toolPaletteWidget_ObjType_Room.clicked.connect(self.SetRoomMode)
+		self.toolPaletteWidget_ObjType_FloorShape.clicked.connect(self.SetRoomShapeMode)
 		self.toolPaletteWidget_ObjType_Wall.clicked.connect(self.EnableWallMode)
 		self.toolPaletteWidget_ObjType_Diag.clicked.connect(self.EnableDiagnalWallMode)
 		self.toolPaletteWidget_ObjType_Door.clicked.connect(self.SetDoorMode)
 		self.toolPaletteWidget_ObjType_Spr.clicked.connect(self.SetActorMode)
-
-
+		
 		self.toolPaletteWidget_ObjType_Room.setCheckable(True)
-		self.toolPaletteWidget_ObjType_Wall.setCheckable(True)
-		self.toolPaletteWidget_ObjType_Diag.setCheckable(True)
-		self.toolPaletteWidget_ObjType_Door.setCheckable(True)
-		self.toolPaletteWidget_ObjType_Spr.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Room.setAutoExclusive(True)
+		
+		self.toolPaletteWidget_ObjType_FloorShape.setCheckable(True)
+		self.toolPaletteWidget_ObjType_FloorShape.setAutoExclusive(True)
+
+		self.toolPaletteWidget_ObjType_Wall.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Wall.setAutoExclusive(True)
+
+		self.toolPaletteWidget_ObjType_Diag.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Diag.setAutoExclusive(True)
+
+		self.toolPaletteWidget_ObjType_Door.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Door.setAutoExclusive(True)
+
+		self.toolPaletteWidget_ObjType_Spr.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Spr.setAutoExclusive(True)
 
 		self.toolPaletteWidget_ObjTypeLayout = QtWidgets.QVBoxLayout()
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Room)
+		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_FloorShape)
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Wall)
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Diag)
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Door)
@@ -190,6 +200,7 @@ class Window(QtWidgets.QMainWindow):
 		### BOTTOM BAR
 		self.footerBar = QtWidgets.QStatusBar()
 		self.footerBar_label = QtWidgets.QLabel("0 tiles, 0 sprites")
+
 		self.zoomInButton = QtWidgets.QPushButton("+")
 		self.zoomOutButton = QtWidgets.QPushButton("-")
 		self.zoomInButton.setFixedSize(32,32)
@@ -198,7 +209,21 @@ class Window(QtWidgets.QMainWindow):
 		self.zoomOutButton.clicked.connect(self.zoomOut)
 		self.footerBar.addWidget(self.zoomInButton)
 		self.footerBar.addWidget(self.zoomOutButton)
+
+		
+		#self.FloorUpButton = QtWidgets.QPushButton("Go Upstairs")
+		#self.FloorDownButton = QtWidgets.QPushButton("Go Downstairs")
+		#self.FloorLevel = QtWidgets.QLabel("Floor 0")
+
+		#self.FloorUpButton.clicked.connect(self.FloorUp)
+		#self.FloorDownButton.clicked.connect(self.FloorDown)
+		
+		#self.footerBar.addWidget(self.FloorUpButton)
+		#self.footerBar.addWidget(self.FloorLevel)
+		#self.footerBar.addWidget(self.FloorDownButton)
+		
 		self.footerBar.addPermanentWidget(self.footerBar_label)
+
 		self.setStatusBar(self.footerBar)
 
 		self.setupMenuBar()
@@ -296,7 +321,22 @@ class Window(QtWidgets.QMainWindow):
 		else:
 			self.gridScene.update()
 			self.gridScene.UpdateSize()
-
+		
+	#def FloorUp(self):
+	#	global CURRENT_FLOOR
+	#	CURRENT_FLOOR += 1
+	#	self.gridScene.update()
+	#	self.gridScene.UpdateSize()
+	#	
+	#def FloorDown(self):
+	#	global CURRENT_FLOOR
+	#	CURRENT_FLOOR += 1
+	#	if CURRENT_FLOOR < 0:
+	#		CURRENT_FLOOR = 0
+	#	else:
+	#		self.gridScene.update()
+	#		self.gridScene.UpdateSize()
+	
 	def SetRoomMode(self):
 		global obj_mode
 		obj_mode = 0
@@ -315,6 +355,10 @@ class Window(QtWidgets.QMainWindow):
 
 		print("ACTOR MODE ACTIVATE")
 		obj_mode = 3
+
+	def SetRoomShapeMode(self):
+		global obj_mode
+		obj_mode = 4
 
 
 	def UpdateGemstoneList(self):
@@ -438,12 +482,13 @@ class GridScene(QtWidgets.QGraphicsScene):
 		elif obj_mode == 2:
 			tile = current_level.TileAt(*array)
 			if tile:
-				diagDown = (tile_x_pos+tile_y_pos)/2
-				diagUp = (tile_x_pos+1-tile_y_pos)/2
-				if abs(diagUp-0.5) < 0.05:
-					tile.walls[4] = not tile.walls[4]
-				elif abs(diagDown-0.5) < 0.05:
-					tile.walls[5] = not tile.walls[5]
+				if tile.walls[4]:
+				   tile.walls[4] = False
+				   tile.walls[5] = True
+				elif tile.walls[5]:
+				   tile.walls[5] = False
+				else:
+				   tile.walls[4] = True
 		elif obj_mode == 3:
 			gem = current_level.GemstoneAt(*array)
 			if draw_mode == 0:
@@ -465,7 +510,13 @@ class GridScene(QtWidgets.QGraphicsScene):
 
 			self.parent.UpdateGemstoneList()
 			print(current_level.gemstones)
-
+		elif obj_mode == 4:
+			tile = current_level.TileAt(*array)
+			if tile:
+				tile.shape+=1
+				if tile.shape > 4:
+					tile.shape = 0
+				current_level.AutoWall(tile)
 		self.parent.UpdateStatusBar()
 
 	def mouseMoveEvent(self, event):
@@ -513,7 +564,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		for y in range(int(y1), int(y2 + 1), CELL_SIZE):
 			painter.drawLine(x1, y, x2, y)
 
-		current_level.draw(painter, CELL_SIZE, draw_mode == 3)
+		current_level.draw(painter, CELL_SIZE, obj_mode == 2)
 
 class GemstoneItem(QtWidgets.QGraphicsItem):
 	def __init__(self, xIn, yIn, parent=None):
