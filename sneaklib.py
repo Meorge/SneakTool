@@ -193,10 +193,29 @@ class SneakstersLevel:
 
 		for gem in self.gemstones:
 			gem.draw(painter, size)
+	def PackLevelData(self):
+		headerPacker = struct.Struct('4sIIII')
+		packed = b''
+		while ((len(packed) + headerPacker.size) % 0x10)!=0:
+			packed+=b'\0'
+		TileArrayOffset = len(packed) + headerPacker.size
+		TileArrayData = self.PackTileData()
+		packed += TileArrayData
+		while ((len(packed) + headerPacker.size) % 0x10)!=0:
+			packed+=b'\0'
+		GemstoneArrayOffset = len(packed) + headerPacker.size
+		GemstoneArrayData = self.PackGemstoneData()
+		packed += GemstoneArrayData
+
+		return headerPacker.pack(b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData)) + packed
+	def UnpackLevelData(self, data):
+		headerUnpacker = struct.Struct('4sIIII')
+		header = headerUnpacker.unpack(data[:headerUnpacker.size])
+		self.UnpackTileData(data[header[1]:header[1]+header[2]])
+		self.UnpackGemstoneData(data[header[3]:header[3]+header[4]])
 
 	def PackTileData(self):
 		numberOfTiles = len(self.tiles)
-
 		firstPacker = struct.Struct('4sI')
 
 		data = (b"TILE", numberOfTiles)
@@ -259,14 +278,14 @@ class SneakstersLevel:
 			gem = Gemstone(unpacked[0], unpacked[1], None)
 			self.gemstones.append(gem)
 
-	def PackLevelData(self):
-		roomData = self.PackTileData()
-		gemData = self.PackGemstoneData()
-
-		lengthOfRoomData = len(roomData)
-		lengthOfGemData = len(gemData)
-
-		headerPacker = struct.Struct('4sII')
+	#def PackLevelData(self):
+	#	roomData = self.PackTileData()
+	#	gemData = self.PackGemstoneData()
+	#
+	#	lengthOfRoomData = len(roomData)
+	#	lengthOfGemData = len(gemData)
+	#
+	#	headerPacker = struct.Struct('4sII')
 		
 
 

@@ -255,8 +255,7 @@ class Window(QtWidgets.QMainWindow):
 		print(saveTo)
 		if saveTo[0] == "": return
 		file = open(saveTo[0], 'wb')
-
-		data_to_save = current_level.PackTileData(current_level.tiles)
+		data_to_save = current_level.PackLevelData()
 		file.write(data_to_save)
 		file.close()
 
@@ -269,10 +268,12 @@ class Window(QtWidgets.QMainWindow):
 
 		current_level = sneaklib.SneakstersLevel()
 
-		current_level.UnpackTileData(file.read())
+		current_level.UnpackLevelData(file.read())
 		file.close()
 
+		self.UpdateGemstoneList()
 		self.gridScene.update(self.gridScene.sceneRect())
+
 
 
 
@@ -576,7 +577,7 @@ class GemstoneItem(QtWidgets.QGraphicsItem):
 		return QtCore.QRectF(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
 
 	def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
-		painter.drawPixmap(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE, QtGui.QPixmap(icons_path + "official_sneaksters/gem.png"))
+		None
 
 
 
