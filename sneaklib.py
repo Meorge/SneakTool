@@ -18,16 +18,30 @@ class Actor(SneakObj):
 
 
 class Gemstone(Actor):
-	def __init__(self, x, y, graphicsItem):
+	def __init__(self, x, y):
 		super().__init__(x, y)
-		self.graphicsItem = graphicsItem
 
 	def boundingRect(self):
 		return QtCore.QRectF(self.x * size, self.y * size, size, size)
 
 	def draw(self, painter, size):
+		print(size)
+		#painter.setBrush(QtGui.QBrush(QtGui.QColor(200,200,200)))
+		#painter.drawRect(self.x * size, self.y * size, size, size)
 		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + "official_sneaksters/gem.png"))
 
+class Guard(Actor):
+	def __init__(self, x, y):
+		super().__init__(x, y)
+
+	def boundingRect(self):
+		return (QtCore.QRectF(self.x * size, self.y * size, size, size))
+
+	
+class GuardNode(Actor):
+	def __init__(self, x, y, guard):
+		super().__init__(x, y)
+		self.guard = guard
 
 
 class Tile(SneakObj):
@@ -193,6 +207,8 @@ class SneakstersLevel:
 
 		for gem in self.gemstones:
 			gem.draw(painter, size)
+
+
 	def PackLevelData(self):
 		headerPacker = struct.Struct('4sIIII')
 		packed = b''
@@ -275,7 +291,7 @@ class SneakstersLevel:
 			gemUnpacker = struct.Struct('HHH')
 
 			unpacked = gemUnpacker.unpack_from(data, (8 + gemUnpacker.size * i))
-			gem = Gemstone(unpacked[0], unpacked[1], None)
+			gem = Gemstone(unpacked[0], unpacked[1])
 			self.gemstones.append(gem)
 
 	#def PackLevelData(self):
@@ -294,8 +310,12 @@ class SneakstersLevel:
 
 #print(len(send_nudes))
 
-icons_path = os.path.dirname(__file__)
-if (sys.platform == "darwin"):
-	icons_path += "icons/"
-else:
-	icons_path += "/icons/"
+icons_path = os.path.dirname(__file__) + "/icons/"
+
+# Apparently this isn't necessary here???
+# if (sys.platform == "darwin"):
+# 	icons_path += "/icons/"
+# else:
+# 	icons_path += "/icons/"
+
+print(icons_path + " PLOOPA LOOPA")

@@ -47,7 +47,7 @@ class Window(QtWidgets.QMainWindow):
 		super(Window, self).__init__(parent)
 		
 
-		print(icons_path)
+		#print(icons_path)
 
 		#self.setupUi()
 		self.meorgeUI()
@@ -76,28 +76,33 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPalette.setWindowTitle("Tools")
 		self.toolPaletteWidget = QtWidgets.QWidget()
 
-		self.toolPaletteWidget_DrawButton = QtWidgets.QPushButton()
+		self.toolPaletteWidget_DrawButton = QtWidgets.QPushButton("Draw")
 		self.toolPaletteWidget_DrawButtonIco = QtGui.QIcon(icons_path + "aero_pen_xl.cur")
 		#self.toolPaletteWidget_DrawButton.align
 		self.toolPaletteWidget_DrawButton.setIcon(self.toolPaletteWidget_DrawButtonIco)
 		#self.toolPaletteWidget_DrawButton.setFlat(True)
-		self.toolPaletteWidget_DrawButton.setFixedSize(45,40)
-		#self.toolPaletteWidget_DrawButton.setCheckable(True)
+		#self.toolPaletteWidget_DrawButton.setFixedSize(40,40)
+		self.toolPaletteWidget_DrawButton.setCheckable(True)
+		self.toolPaletteWidget_DrawButton.setAutoExclusive(True)
 		self.toolPaletteWidget_DrawButton.clicked.connect(self.EnableDrawMode)
 		
 
 		
 		self.toolPaletteWidget_EraseButton = QtWidgets.QPushButton("Erase")
 		self.toolPaletteWidget_EraseButton.clicked.connect(self.EnableEraseMode)
+		#self.toolPaletteWidget_EraseButton.setFixedSize(40,40)
+		self.toolPaletteWidget_EraseButton.setCheckable(True)
 
 
-		#self.toolPaletteWidget_EraseButton.setCheckable(True)
+		self.toolPaletteWidget_EraseButton.setCheckable(True)
+		self.toolPaletteWidget_EraseButton.setAutoExclusive(True)
 
-		self.toolPaletteWidget_MoveButton = QtWidgets.QPushButton()
+		self.toolPaletteWidget_MoveButton = QtWidgets.QPushButton("Move")
 		self.toolPaletteWidget_MoveButtonIco = QtGui.QIcon(icons_path + "arrow_rl.cur")
+		self.toolPaletteWidget_MoveButton.setAutoExclusive(True)
 		#self.toolPaletteWidget_DrawButton.align
 		self.toolPaletteWidget_MoveButton.setIcon(self.toolPaletteWidget_MoveButtonIco)
-		self.toolPaletteWidget_MoveButton.setFixedSize(45,40)
+		#self.toolPaletteWidget_MoveButton.setFixedSize(40,40)
 		self.toolPaletteWidget_MoveButton.setCheckable(True)
 
 		self.toolPaletteWidget_Layout = QtWidgets.QVBoxLayout()
@@ -499,15 +504,13 @@ class GridScene(QtWidgets.QGraphicsScene):
 					## I tried to follow the way you did the tiles, where their data-structures and draw
 					## functions were together, but they weren't painting. Until we figure it out, this will
 					## work well enough.
-					gem = sneaklib.Gemstone(*array, GemstoneItem(tileX, tileY))
+					gem = sneaklib.Gemstone(*array)
 					current_level.gemstones.append(gem)
-
-
-					self.addItem(gem.graphicsItem)
+					#self.addItem(gem.graphicsItem)
 			elif draw_mode == 1:
 				if gem:
 					current_level.gemstones.remove(gem)
-					self.removeItem(gem.graphicsItem)
+					#self.removeItem(gem.graphicsItem)
 
 			self.parent.UpdateGemstoneList()
 			print(current_level.gemstones)
@@ -567,17 +570,17 @@ class GridScene(QtWidgets.QGraphicsScene):
 
 		current_level.draw(painter, CELL_SIZE, obj_mode == 2)
 
-class GemstoneItem(QtWidgets.QGraphicsItem):
-	def __init__(self, xIn, yIn, parent=None):
-		super().__init__(parent=parent)
-		self.x = xIn
-		self.y = yIn
+# class GemstoneItem(QtWidgets.QGraphicsItem):
+# 	def __init__(self, xIn, yIn, parent=None):
+# 		super().__init__(parent=parent)
+# 		self.x = xIn
+# 		self.y = yIn
 
-	def boundingRect(self):
-		return QtCore.QRectF(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+# 	def boundingRect(self):
+# 		return QtCore.QRectF(self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
 
-	def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
-		None
+# 	def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
+# 		None
 
 
 
