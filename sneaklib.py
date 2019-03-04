@@ -224,6 +224,7 @@ class SneakstersLevel:
 		packed += GemstoneArrayData
 
 		return headerPacker.pack(b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData)) + packed
+		
 	def UnpackLevelData(self, data):
 		headerUnpacker = struct.Struct('4sIIII')
 		header = headerUnpacker.unpack(data[:headerUnpacker.size])
