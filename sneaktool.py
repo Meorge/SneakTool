@@ -47,8 +47,9 @@ class Window(QtWidgets.QMainWindow):
 	
 	
 	def __init__(self, parent=None):
-		global obj_mode
+		global obj_mode, obj_selected
 		obj_mode = 0
+		obj_selected = 0
 
 		super(Window, self).__init__(parent)
 
@@ -200,17 +201,19 @@ class Window(QtWidgets.QMainWindow):
 		self.addDockWidget(Qt.RightDockWidgetArea, self.currentActors)
 
 		self.currentActorsWidget.setHeaderHidden(True)
-
+		
 		self.currentActorsWidget_Gems = QtWidgets.QTreeWidgetItem()
-		self.currentActorsWidget_Gems.setText(0, "Gemstones (0)")
-
-		self.currentActorsWidget_Guards = QtWidgets.QTreeWidgetItem()
-		self.currentActorsWidget_Guards.setText(0, "Guards (0)")
+		self.currentActorsWidget_Gems.setText(0, "Gemstones")
 
 		#self.currentActorsWidget_Gems.set
 
 		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_Gems)
-		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_Guards)
+
+		self.currentActorsWidget_Grds = QtWidgets.QTreeWidgetItem()
+		self.currentActorsWidget_Grds.setText(0, "Guards")
+
+
+		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_Grds)
 
 
 		### BOTTOM BAR
@@ -289,7 +292,7 @@ class Window(QtWidgets.QMainWindow):
 		current_level.UnpackLevelData(file.read())
 		file.close()
 
-		self.UpdateGemstoneList()
+		self.UpdateActorList()
 		self.gridScene.update(self.gridScene.sceneRect())
 
 
@@ -391,7 +394,10 @@ class Window(QtWidgets.QMainWindow):
 		global obj_selected
 		obj_selected = currentRow
 
-
+		
+	def UpdateActorList(self):
+		self.UpdateGemstoneList()
+		self.UpdateGuardList()
 	def UpdateGemstoneList(self):
 		for i in reversed(range(self.currentActorsWidget_Gems.childCount())):
 			self.currentActorsWidget_Gems.removeChild(self.currentActorsWidget_Gems.child(i))
@@ -402,18 +408,16 @@ class Window(QtWidgets.QMainWindow):
 			self.currentActorsWidget_Gems.addChild(newItem)
 		
 		self.currentActorsWidget_Gems.setText(0, "Gemstones (" + str(len(current_level.gemstones)) + ")")
-
-
 	def UpdateGuardList(self):
-		for i in reversed(range(self.currentActorsWidget_Guards.childCount())):
-			self.currentActorsWidget_Guards.removeChild(self.currentActorsWidget_Guards.child(i))
+		for i in reversed(range(self.currentActorsWidget_Grds.childCount())):
+			self.currentActorsWidget_Grds.removeChild(self.currentActorsWidget_Grds.child(i))
 
 		for g in current_level.guards:
 			newItem = QtWidgets.QTreeWidgetItem()
 			newItem.setText(0, "(" + str(g.x) + ", " + str(g.y) + ")")
-			self.currentActorsWidget_Guards.addChild(newItem)
+			self.currentActorsWidget_Grds.addChild(newItem)
 		
-		self.currentActorsWidget_Guards.setText(0, "Guards (" + str(len(current_level.guards)) + ")")
+		self.currentActorsWidget_Grds.setText(0, "Guards (" + str(len(current_level.guards)) + ")")
 
 
 
@@ -562,7 +566,6 @@ class GridScene(QtWidgets.QGraphicsScene):
 						current_level.gemstones.remove(gem)
 						#self.removeItem(gem.graphicsItem)
 
-				self.parent.UpdateGemstoneList()
 				print(current_level.gemstones)
 
 			elif obj_selected == 1: ### GUARD SELECTED
@@ -575,7 +578,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 				elif draw_mode == 1:
 					if guard:
 						current_level.guards.remove(guard)
-				self.parent.UpdateGuardList()
+
 				print(current_level.guards)
 						
 
@@ -589,6 +592,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		self.tileX = tileX
 		self.tileY = tileY
 		self.mouseDown = True
+		self.parent.UpdateActorList()
 		self.parent.UpdateStatusBar()
 
 	def mouseReleaseEvent(self, event):
@@ -599,7 +603,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 			return
 		#print("move the scene")
 		super(GridScene, self).mouseMoveEvent(event)
-
+		if len(current_level.selectedActors) == 0: return
 		fixedX = event.scenePos().x()
 		fixedY = event.scenePos().y()
 		tileX = fixedX // CELL_SIZE
@@ -610,6 +614,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		current_level.moveSelectedObjects(tileX - self.tileX, tileY - self.tileY)
 		self.tileX = tileX
 		self.tileY = tileY
+		self.parent.UpdateActorList()
 		self.update()
 
 
