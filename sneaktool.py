@@ -45,7 +45,6 @@ class Window(QtWidgets.QMainWindow):
 		obj_mode = 0
 
 		super(Window, self).__init__(parent)
-		
 
 		#print(icons_path)
 
@@ -65,7 +64,7 @@ class Window(QtWidgets.QMainWindow):
 		
 		self.setCentralWidget(self.gridView)
 
-		
+
 		#self.resize(500,500)
 
 
@@ -97,8 +96,9 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_EraseButton.setCheckable(True)
 		self.toolPaletteWidget_EraseButton.setAutoExclusive(True)
 
-		self.toolPaletteWidget_MoveButton = QtWidgets.QPushButton("Move")
+		self.toolPaletteWidget_MoveButton = QtWidgets.QPushButton("Select / Move")
 		self.toolPaletteWidget_MoveButtonIco = QtGui.QIcon(icons_path + "arrow_rl.cur")
+		self.toolPaletteWidget_MoveButton.clicked.connect(self.EnableMoveMode)
 		self.toolPaletteWidget_MoveButton.setAutoExclusive(True)
 		#self.toolPaletteWidget_DrawButton.align
 		self.toolPaletteWidget_MoveButton.setIcon(self.toolPaletteWidget_MoveButtonIco)
@@ -271,6 +271,8 @@ class Window(QtWidgets.QMainWindow):
 		if openFrom[0] == "":return
 		file = open(openFrom[0], 'rb')
 
+		self.gridScene.clearObjects()
+
 		current_level = sneaklib.SneakstersLevel()
 
 		current_level.UnpackLevelData(file.read())
@@ -281,6 +283,13 @@ class Window(QtWidgets.QMainWindow):
 
 
 
+		
+	def EnableMoveMode(self):
+		global draw_mode
+		draw_mode = 2
+		self.gridScene.update()
+		print("MOVE MODE")
+		print(draw_mode)
 
 	def EnableEraseMode(self):
 		global draw_mode
@@ -408,7 +417,7 @@ class GridView(QtWidgets.QGraphicsView):
 
 	def mouseMoveEvent(self, event):
 		event.ignore()
-		print("move the view")
+		#print("move the view")
 		super(GridView, self).mouseMoveEvent(event)
 
 
@@ -421,12 +430,17 @@ class GridScene(QtWidgets.QGraphicsScene):
 		super().__init__(parent)
 		self.parent = parent
 		self.UpdateSize()
+		self.mouseDown = False
 	def UpdateSize(self):
 		self.setSceneRect(0, 0, 0x80000/CELL_SIZE, 0x80000/CELL_SIZE)
 	def addNode(self, node):
 		self.addItem(node)
 
 		node.EstablishInputsOutputs()
+		
+	def clearObjects(self, scene):
+		for gem in current_level.gemstones:
+			self.removeItem(gem)
 
 	def mousePressEvent(self, event):
 		global current_level
@@ -450,7 +464,14 @@ class GridScene(QtWidgets.QGraphicsScene):
 
 		array = [tileX, tileY]
 		print("DRAW MODE IS " + str(draw_mode))
-		if obj_mode == 0:
+		if draw_mode == 2:
+			if((QtGui.QGuiApplication.keyboardModifiers() & QtCore.Qt.ShiftModifier) != QtCore.Qt.ShiftModifier):
+				current_level.selectedActors.clear()
+			obj = current_level.ObjectAt(*array)
+			if obj:
+				if obj not in current_level.selectedActors: current_level.selectedActors.append(obj)
+				else: current_level.selectedActors.remove(obj)
+		elif obj_mode == 0:
 			if draw_mode == 0:
 				tile = current_level.TileAt(*array)
 				if not tile:
@@ -510,7 +531,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 			elif draw_mode == 1:
 				if gem:
 					current_level.gemstones.remove(gem)
-					#self.removeItem(gem.graphicsItem)
+					self.removeItem(gem.graphicsItem)
 
 			self.parent.UpdateGemstoneList()
 			print(current_level.gemstones)
@@ -521,17 +542,32 @@ class GridScene(QtWidgets.QGraphicsScene):
 				if tile.shape > 4:
 					tile.shape = 0
 				current_level.AutoWall(tile)
+		self.tileX = tileX
+		self.tileY = tileY
+		self.mouseDown = True
 		self.parent.UpdateStatusBar()
 
+	def mouseReleaseEvent(self, event):
+		self.mouseDown = False
 	def mouseMoveEvent(self, event):
-		event.ignore()
+		if not self.mouseDown:
+			event.ignore()
+			return
 		#print("move the scene")
 		super(GridScene, self).mouseMoveEvent(event)
 
 		fixedX = event.scenePos().x()
 		fixedY = event.scenePos().y()
+		tileX = fixedX // CELL_SIZE
+		tileY = fixedY // CELL_SIZE
 		tile_x_pos = (fixedX / CELL_SIZE) % 1.0
 		tile_y_pos = (fixedY / CELL_SIZE) % 1.0
+
+		current_level.moveSelectedObjects(tileX - self.tileX, tileY - self.tileY)
+		self.tileX = tileX
+		self.tileY = tileY
+		self.update()
+
 
 	def drawBackground(self, painter, rect):
 		#print("boopy")

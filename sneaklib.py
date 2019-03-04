@@ -15,6 +15,9 @@ class SneakObj():
 class Actor(SneakObj):
 	def __init__(self, x, y):
 		super().__init__(x, y)
+	def move(self, x, y):
+		self.x+=x
+		self.y+=y
 
 
 class Gemstone(Actor):
@@ -24,11 +27,11 @@ class Gemstone(Actor):
 	def boundingRect(self):
 		return QtCore.QRectF(self.x * size, self.y * size, size, size)
 
-	def draw(self, painter, size):
-		print(size)
+	def draw(self, painter, size, selected = False):
+		#print(size)
 		#painter.setBrush(QtGui.QBrush(QtGui.QColor(200,200,200)))
 		#painter.drawRect(self.x * size, self.y * size, size, size)
-		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + "official_sneaksters/gem.png"))
+		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/gem_selected.png" if selected else "official_sneaksters/gem.png")))
 
 class Guard(Actor):
 	def __init__(self, x, y):
@@ -97,7 +100,6 @@ class Tile(SneakObj):
 		painter.setPen(self.diagWallPen)
 		self.drawDiagnalWalls(painter,dx,dy,size, False)
 
-
 class SneakstersLevel:
 	#send_nudes = [[200.0, 240.0], [160.0, 240.0], [120.0, 240.0], [120.0, 280.0], [120.0, 320.0], [160.0, 320.0], [200.0, 320.0], [200.0, 360.0], [200.0, 400.0], [160.0, 400.0], [120.0, 400.0], [280.0, 240.0], [280.0, 280.0], [280.0, 320.0], [280.0, 360.0], [280.0, 400.0], [320.0, 400.0], [360.0, 400.0], [320.0, 320.0], [360.0, 320.0], [320.0, 240.0], [360.0, 240.0], [440.0, 240.0], [440.0, 280.0], [440.0, 320.0], [440.0, 360.0], [440.0, 400.0], [480.0, 280.0], [520.0, 320.0], [560.0, 360.0], [560.0, 400.0], [560.0, 320.0], [560.0, 280.0], [560.0, 240.0], [640.0, 240.0], [640.0, 280.0], [640.0, 320.0], [640.0, 360.0], [640.0, 400.0], [680.0, 240.0], [720.0, 280.0], [720.0, 320.0], [720.0, 360.0], [680.0, 400.0], [80.0, 480.0], [80.0, 520.0], [80.0, 560.0], [80.0, 600.0], [80.0, 640.0], [120.0, 520.0], [160.0, 560.0], [200.0, 480.0], [200.0, 520.0], [200.0, 560.0], [200.0, 600.0], [200.0, 640.0], [280.0, 480.0], [280.0, 520.0], [280.0, 560.0], [280.0, 600.0], [280.0, 640.0], [320.0, 640.0], [360.0, 640.0], [360.0, 600.0], [360.0, 560.0], [360.0, 520.0], [360.0, 480.0], [440.0, 480.0], [440.0, 520.0], [440.0, 560.0], [440.0, 600.0], [440.0, 640.0], [480.0, 480.0], [520.0, 520.0], [520.0, 560.0], [520.0, 600.0], [480.0, 640.0], [600.0, 480.0], [600.0, 520.0], [600.0, 560.0], [600.0, 600.0], [600.0, 640.0], [640.0, 640.0], [680.0, 640.0], [640.0, 560.0], [680.0, 560.0], [680.0, 480.0], [640.0, 480.0], [840.0, 480.0], [800.0, 480.0], [760.0, 480.0], [760.0, 520.0], [760.0, 560.0], [800.0, 560.0], [840.0, 560.0], [840.0, 600.0], [840.0, 640.0], [800.0, 640.0], [760.0, 640.0]]
 	
@@ -106,6 +108,8 @@ class SneakstersLevel:
 
 		self.tiles = []
 		self.gemstones = []
+		
+		self.selectedActors = []
 
 		#glarp = self.PackTileData(self.send_nudes)
 		#print(self.UnpackTileData(glarp))
@@ -116,11 +120,21 @@ class SneakstersLevel:
 				return tile
 		return None
 
+	def ObjectAt(self, x, y):
+		obj = self.GemstoneAt(x,y)
+		if obj:return obj
+		return None
+
+	def moveSelectedObjects(self, x, y):
+		for actor in self.selectedActors:
+			actor.move(x,y)
+
 	def GemstoneAt(self, x, y):
 		for gem in self.gemstones:
 			if gem.x == x and gem.y == y:
 				return gem
 		return None
+
 
 	def AutoWall(self, tile, removing = False):
 		tileTop = self.TileAt(tile.x, tile.y-1)
@@ -206,7 +220,7 @@ class SneakstersLevel:
 			tile.draw(painter, size, show_diag_walls)
 
 		for gem in self.gemstones:
-			gem.draw(painter, size)
+			gem.draw(painter, size, gem in self.selectedActors)
 
 
 	def PackLevelData(self):
