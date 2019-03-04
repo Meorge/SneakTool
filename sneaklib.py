@@ -49,7 +49,7 @@ class Guard(Actor):
 		return (QtCore.QRectF(self.x * size, self.y * size, size, size))
 
 	def draw(self, painter, size, selected = False):
-		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/guard.png")))
+		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("764986.png")))
 
 	
 class GuardNode(Actor):
@@ -140,7 +140,10 @@ class SneakstersLevel:
 
 	def ObjectAt(self, x, y):
 		obj = self.GemstoneAt(x,y)
-		if obj:return obj
+		if obj: return obj
+		else: 
+			obj = self.GuardAt(x, y)
+			if obj: return obj
 		return None
 
 	def moveSelectedObjects(self, x, y):

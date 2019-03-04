@@ -202,11 +202,15 @@ class Window(QtWidgets.QMainWindow):
 		self.currentActorsWidget.setHeaderHidden(True)
 
 		self.currentActorsWidget_Gems = QtWidgets.QTreeWidgetItem()
-		self.currentActorsWidget_Gems.setText(0, "Gemstones")
+		self.currentActorsWidget_Gems.setText(0, "Gemstones (0)")
+
+		self.currentActorsWidget_Guards = QtWidgets.QTreeWidgetItem()
+		self.currentActorsWidget_Guards.setText(0, "Guards (0)")
 
 		#self.currentActorsWidget_Gems.set
 
 		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_Gems)
+		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_Guards)
 
 
 		### BOTTOM BAR
@@ -400,6 +404,18 @@ class Window(QtWidgets.QMainWindow):
 		self.currentActorsWidget_Gems.setText(0, "Gemstones (" + str(len(current_level.gemstones)) + ")")
 
 
+	def UpdateGuardList(self):
+		for i in reversed(range(self.currentActorsWidget_Guards.childCount())):
+			self.currentActorsWidget_Guards.removeChild(self.currentActorsWidget_Guards.child(i))
+
+		for g in current_level.guards:
+			newItem = QtWidgets.QTreeWidgetItem()
+			newItem.setText(0, "(" + str(g.x) + ", " + str(g.y) + ")")
+			self.currentActorsWidget_Guards.addChild(newItem)
+		
+		self.currentActorsWidget_Guards.setText(0, "Guards (" + str(len(current_level.guards)) + ")")
+
+
 
 ##########################################
 ##########################################
@@ -559,7 +575,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 				elif draw_mode == 1:
 					if guard:
 						current_level.guards.remove(guard)
-
+				self.parent.UpdateGuardList()
 				print(current_level.guards)
 						
 
