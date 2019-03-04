@@ -31,9 +31,15 @@ Object modes
 0 = room
 1 = wall
 2 = diag wall
-3 = actor
+3 = Actor
 """
 
+global obj_selected
+"""
+Actors to select
+0 = gemstone
+1 = guard
+"""
 
 class Window(QtWidgets.QMainWindow):
 	"""Main Window"""
@@ -176,13 +182,14 @@ class Window(QtWidgets.QMainWindow):
 		self.actorPalette = QtWidgets.QDockWidget()
 		self.actorPalette.setWindowTitle("Actor Palette")
 		self.actorPaletteWidget = QtWidgets.QListWidget()
+		self.actorPaletteWidget.currentRowChanged.connect(self.actorItemChanged)
 		self.actorPalette.setWidget(self.actorPaletteWidget)
 		self.addDockWidget(Qt.RightDockWidgetArea, self.actorPalette)
 
 
 		self.actorPaletteWidget.addItem("Gemstone")
-		self.actorPaletteWidget.addItem("Gem Sack")
 		self.actorPaletteWidget.addItem("Guard")
+		self.actorPaletteWidget.addItem("Gem Sack")
 		self.actorPaletteWidget.addItem("Trash Can")
 
 		### CURRENT actorS
@@ -376,6 +383,11 @@ class Window(QtWidgets.QMainWindow):
 		obj_mode = 4
 
 
+	def actorItemChanged(self, currentRow):
+		global obj_selected
+		obj_selected = currentRow
+
+
 	def UpdateGemstoneList(self):
 		for i in reversed(range(self.currentActorsWidget_Gems.childCount())):
 			self.currentActorsWidget_Gems.removeChild(self.currentActorsWidget_Gems.child(i))
@@ -517,24 +529,40 @@ class GridScene(QtWidgets.QGraphicsScene):
 				else:
 				   tile.walls[4] = True
 		elif obj_mode == 3:
-			gem = current_level.GemstoneAt(*array)
-			if draw_mode == 0:
-				if not gem:
+			if obj_selected == 0: ### GEMSTONE SELECTED
+				gem = current_level.GemstoneAt(*array)
+				if draw_mode == 0:
+					if not gem:
 
-					## At present the GemstoneItem (graphical) is different from the data-structure
-					## I tried to follow the way you did the tiles, where their data-structures and draw
-					## functions were together, but they weren't painting. Until we figure it out, this will
-					## work well enough.
-					gem = sneaklib.Gemstone(*array)
-					current_level.gemstones.append(gem)
-					#self.addItem(gem.graphicsItem)
-			elif draw_mode == 1:
-				if gem:
-					current_level.gemstones.remove(gem)
-					self.removeItem(gem.graphicsItem)
+						## At present the GemstoneItem (graphical) is different from the data-structure
+						## I tried to follow the way you did the tiles, where their data-structures and draw
+						## functions were together, but they weren't painting. Until we figure it out, this will
+						## work well enough.
+						gem = sneaklib.Gemstone(*array)
+						current_level.gemstones.append(gem)
+						#self.addItem(gem.graphicsItem)
+				elif draw_mode == 1:
+					if gem:
+						current_level.gemstones.remove(gem)
+						#self.removeItem(gem.graphicsItem)
 
-			self.parent.UpdateGemstoneList()
-			print(current_level.gemstones)
+				self.parent.UpdateGemstoneList()
+				print(current_level.gemstones)
+
+			elif obj_selected == 1: ### GUARD SELECTED
+				guard = current_level.GuardAt(*array)
+				if draw_mode == 0:
+					if not guard:
+						guard = sneaklib.Guard(*array)
+						current_level.guards.append(guard)
+
+				elif draw_mode == 1:
+					if guard:
+						current_level.guards.remove(guard)
+
+				print(current_level.guards)
+						
+
 		elif obj_mode == 4:
 			tile = current_level.TileAt(*array)
 			if tile:

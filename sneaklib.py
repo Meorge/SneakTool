@@ -36,15 +36,30 @@ class Gemstone(Actor):
 class Guard(Actor):
 	def __init__(self, x, y):
 		super().__init__(x, y)
+		self.nodes = []
+
+	def AddNode(self, node):
+		node.guard = self
+		self.nodes.append(node)
+
+	def RemoveNode(self, node):
+		self.nodes.remove(node)
 
 	def boundingRect(self):
 		return (QtCore.QRectF(self.x * size, self.y * size, size, size))
 
+	def draw(self, painter, size, selected = False):
+		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/guard.png")))
+
 	
 class GuardNode(Actor):
-	def __init__(self, x, y, guard):
+	def __init__(self, x, y):
 		super().__init__(x, y)
-		self.guard = guard
+		self.guard = None
+
+	def draw(self, painter, size, selected = False):
+		painter.setBrush(QtGui.QBrush(QtGui.QColor(0, 200, 0)))
+		painter.drawEllipse(self.x * size, self.y * size, size, size)
 
 
 class Tile(SneakObj):
@@ -108,8 +123,11 @@ class SneakstersLevel:
 
 		self.tiles = []
 		self.gemstones = []
-		
+		self.guards = []
+
+
 		self.selectedActors = []
+		
 
 		#glarp = self.PackTileData(self.send_nudes)
 		#print(self.UnpackTileData(glarp))
@@ -133,6 +151,12 @@ class SneakstersLevel:
 		for gem in self.gemstones:
 			if gem.x == x and gem.y == y:
 				return gem
+		return None
+
+	def GuardAt(self, x, y):
+		for guard in self.guards:
+			if guard.x == x and guard.y == y:
+				return guard
 		return None
 
 
@@ -221,6 +245,11 @@ class SneakstersLevel:
 
 		for gem in self.gemstones:
 			gem.draw(painter, size, gem in self.selectedActors)
+
+		for guard in self.guards:
+			for node in guard.nodes:
+				node.draw(painter, size, node in self.selectedActors)
+			guard.draw(painter, size, guard in self.selectedActors)
 
 
 	def PackLevelData(self):
