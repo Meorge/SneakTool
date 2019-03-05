@@ -218,9 +218,15 @@ class Window(QtWidgets.QMainWindow):
 		self.actorInfo_layout = QtWidgets.QVBoxLayout()
 
 		self.actorInfo_nodeList = QtWidgets.QListWidget()
+		self.actorInfo_addNodeButton = QtWidgets.QPushButton("Add Node")
+		self.actorInfo_removeNodeButton = QtWidgets.QPushButton("Remove Node")
+		self.actorInfo_nodeLayout = QtWidgets.QHBoxLayout()
+		self.actorInfo_nodeLayout.addWidget(self.actorInfo_addNodeButton)
+		self.actorInfo_nodeLayout.addWidget(self.actorInfo_removeNodeButton)
 		
 		self.actorInfo_layout.addLayout(self.actorInfo_headerLayout, 100)
 		self.actorInfo_layout.addWidget(self.actorInfo_nodeList)
+		self.actorInfo_layout.addLayout(self.actorInfo_nodeLayout)
 		self.actorInfo.setLayout(self.actorInfo_layout)
 
 		self.actorInfo_Panel = QtWidgets.QDockWidget()
@@ -282,6 +288,8 @@ class Window(QtWidgets.QMainWindow):
 		self.setStatusBar(self.footerBar)
 
 		self.setupMenuBar()
+
+		self.UpdateSelection()
 
 	def UpdateStatusBar(self):
 		global current_level
@@ -464,20 +472,29 @@ class Window(QtWidgets.QMainWindow):
 				gemIco = QtGui.QPixmap(icons_path + "official_sneaksters/gem.png")
 				self.actorInfo_actorIconLabel.setPixmap(gemIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
 
+				self.actorInfo_addNodeButton.setEnabled(False)
+				self.actorInfo_removeNodeButton.setEnabled(False)
+
 			elif type(currentSelected) is sneaklib.Guard:
 				self.actorInfo_actorName.setText("Guard")
 				guardIco = QtGui.QPixmap(icons_path + "official_sneaksters/guard.png")
 				self.actorInfo_actorIconLabel.setPixmap(guardIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
+				self.actorInfo_addNodeButton.setEnabled(True)
+				self.actorInfo_removeNodeButton.setEnabled(True)
 
 		elif len(current_level.selectedActors) > 1:
 			self.actorInfo_actorName.setText("Multiple actors selected")
 			self.actorInfo_actorPos.setText("")
 			self.actorInfo_actorIconLabel.clear()
+			self.actorInfo_addNodeButton.setEnabled(False)
+			self.actorInfo_removeNodeButton.setEnabled(False)
 
 		else:
 			self.actorInfo_actorName.setText("No actors selected")
 			self.actorInfo_actorPos.setText("")
 			self.actorInfo_actorIconLabel.clear()
+			self.actorInfo_addNodeButton.setEnabled(False)
+			self.actorInfo_removeNodeButton.setEnabled(False)
 
 
 ##########################################
@@ -663,7 +680,11 @@ class GridScene(QtWidgets.QGraphicsScene):
 			return
 		#print("move the scene")
 		super(GridScene, self).mouseMoveEvent(event)
+		
 		if len(current_level.selectedActors) == 0: return
+		self.parent.UpdateSelection()
+		self.parent.UpdateGemstoneList()
+		self.parent.UpdateGuardList()
 		fixedX = event.scenePos().x()
 		fixedY = event.scenePos().y()
 		tileX = fixedX // CELL_SIZE
