@@ -193,6 +193,42 @@ class Window(QtWidgets.QMainWindow):
 		self.actorPaletteWidget.addItem("Gem Sack")
 		self.actorPaletteWidget.addItem("Trash Can")
 
+
+		### ACTOR INFO
+		self.actorInfo = QtWidgets.QWidget()
+		self.actorInfo_actorIconLabel = QtWidgets.QLabel()
+
+		self.actorInfo_actorIcon = QtGui.QPixmap(icons_path + "official_sneaksters/guard.png")
+		self.actorInfo_actorIconLabel.setPixmap(self.actorInfo_actorIcon.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
+		self.actorInfo_actorIconLabel.setFixedSize(40,40)
+		self.actorInfo_actorName = QtWidgets.QLabel("Guard")
+		self.actorInfo_actorPos = QtWidgets.QLabel("(300, 300)")
+
+		self.actorInfo_labelsLayout = QtWidgets.QVBoxLayout()
+		self.actorInfo_labelsLayout.addWidget(self.actorInfo_actorName)
+		self.actorInfo_labelsLayout.addWidget(self.actorInfo_actorPos)
+
+		# self.actorInfo_labelsWidget = QtWidgets.QWidget()
+		# self.actorInfo_labelsWidget.setLayout(self.actorInfo_labelsLayout)
+
+		self.actorInfo_headerLayout = QtWidgets.QHBoxLayout()
+		self.actorInfo_headerLayout.addWidget(self.actorInfo_actorIconLabel)
+		self.actorInfo_headerLayout.addLayout(self.actorInfo_labelsLayout)
+
+		self.actorInfo_layout = QtWidgets.QVBoxLayout()
+
+		self.actorInfo_nodeList = QtWidgets.QListWidget()
+		
+		self.actorInfo_layout.addLayout(self.actorInfo_headerLayout, 100)
+		self.actorInfo_layout.addWidget(self.actorInfo_nodeList)
+		self.actorInfo.setLayout(self.actorInfo_layout)
+
+		self.actorInfo_Panel = QtWidgets.QDockWidget()
+		self.actorInfo_Panel.setWindowTitle("Actor Settings")
+		self.actorInfo_Panel.setWidget(self.actorInfo)
+		self.addDockWidget(Qt.RightDockWidgetArea, self.actorInfo_Panel)
+
+
 		### CURRENT actorS
 		self.currentActors = QtWidgets.QDockWidget()
 		self.currentActors.setWindowTitle("Current actors")
@@ -419,6 +455,29 @@ class Window(QtWidgets.QMainWindow):
 		
 		self.currentActorsWidget_Grds.setText(0, "Guards (" + str(len(current_level.guards)) + ")")
 
+	def UpdateSelection(self):
+		if len(current_level.selectedActors) == 1:
+			currentSelected = current_level.selectedActors[0]
+			self.actorInfo_actorPos.setText("(" + str(currentSelected.x) + ", " + str(currentSelected.y) + ")")
+			if type(currentSelected) is sneaklib.Gemstone:
+				self.actorInfo_actorName.setText("Gemstone")
+				gemIco = QtGui.QPixmap(icons_path + "official_sneaksters/gem.png")
+				self.actorInfo_actorIconLabel.setPixmap(gemIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
+
+			elif type(currentSelected) is sneaklib.Guard:
+				self.actorInfo_actorName.setText("Guard")
+				guardIco = QtGui.QPixmap(icons_path + "official_sneaksters/guard.png")
+				self.actorInfo_actorIconLabel.setPixmap(guardIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
+
+		elif len(current_level.selectedActors) > 1:
+			self.actorInfo_actorName.setText("Multiple actors selected")
+			self.actorInfo_actorPos.setText("")
+			self.actorInfo_actorIconLabel.clear()
+
+		else:
+			self.actorInfo_actorName.setText("No actors selected")
+			self.actorInfo_actorPos.setText("")
+			self.actorInfo_actorIconLabel.clear()
 
 
 ##########################################
@@ -594,6 +653,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		self.mouseDown = True
 		self.parent.UpdateActorList()
 		self.parent.UpdateStatusBar()
+		self.parent.UpdateSelection()
 
 	def mouseReleaseEvent(self, event):
 		self.mouseDown = False
