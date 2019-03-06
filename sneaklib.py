@@ -1,6 +1,7 @@
 import struct
 import os, sys
 import binascii
+from math import atan2, sin, cos
 from PyQt5 import QtCore, QtGui, QtWidgets #, QtMacExtras
 
 size = 40
@@ -57,12 +58,44 @@ class GuardNode(Actor):
 	def __init__(self, x, y):
 		super().__init__(x, y)
 		self.guard = None
+		self.fillColor = QtGui.QColor(0, 150, 0)
+		self.selectedFillColor = QtGui.QColor(0, 200, 0)
+
+	def __seriouslyDrawPath(self, painter, size, x1, y1, x2, y2):
+		painter.setBrush(QtGui.QBrush(self.fillColor))
+		painter.setPen(QtGui.QPen(QtGui.QColor(0, 170, 0), 4))
+		fx1 = x1 * size + size/2
+		fy1 = y1 * size + size/2
+		fx2 = x2 * size + size/2
+		fy2 = y2 * size + size/2
+		painter.drawLine(fx1, fy1, fx2, fy2)
+
+		painter.setPen(QtGui.QPen(QtGui.QColor(0, 0, 0, 0), 0))
+		
+		ax = (fx1 + fx2)/2
+		ay = (fy1 + fy2)/2
+
+		angle = atan2(fx2-fx1, fy2-fy1)
+
+		print(angle)
+
+		s = sin(angle)
+		c = cos(angle)
+
+		painter.drawPolygon(QtCore.QPoint(ax + 6 * s - 12 * c, ay + 6 * c + 12 * s),
+							QtCore.QPoint(ax - 6 * s, ay - 6 * c),
+							QtCore.QPoint(ax + 6 * s + 12 * c, ay + 6 * c - 12 * s))
+
+	def drawPath(self, painter, size, previousActor, nextActor):
+		if previousActor is not None:
+			self.__seriouslyDrawPath(painter, size, previousActor.x, previousActor.y, self.x, self.y)
+		if nextActor is not None:
+			self.__seriouslyDrawPath(painter, size, self.x, self.y, nextActor.x, nextActor.y)
 
 	def draw(self, painter, size, selected = False):
 		print("painting a node")
-
-		fillColor = QtGui.QColor(0, 150, 0)
-		if selected: fillColor = QtGui.QColor(0, 200, 0)
+		fillColor = self.selectedFillColor if selected else self.fillColor
+		
 		painter.setBrush(QtGui.QBrush(fillColor))
 		painter.setPen(QtGui.QPen(QtGui.QColor(0, 170, 0)))
 
@@ -269,8 +302,9 @@ class SneakstersLevel:
 			gem.draw(painter, size, gem in self.selectedActors)
 
 		for guard in self.guards:
-			for node in guard.nodes:
-				node.draw(painter, size, node in self.selectedActors)
+			for ni in range(len(guard.nodes)):
+				guard.nodes[ni].draw(painter, size, guard.nodes[ni] in self.selectedActors)
+				guard.nodes[ni].drawPath(painter, size, guard.nodes[ni].guard if ni == 0 else None, guard.nodes[ni+1] if ni < (len(guard.nodes)-1) else guard.nodes[ni].guard)
 			guard.draw(painter, size, guard in self.selectedActors)
 
 
