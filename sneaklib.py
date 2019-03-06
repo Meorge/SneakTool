@@ -309,7 +309,7 @@ class SneakstersLevel:
 
 
 	def PackLevelData(self):
-		headerPacker = struct.Struct('4sIIII')
+		headerPacker = struct.Struct('4s II II II')
 
 		# start the packing buffer
 		packed = b''
@@ -344,7 +344,9 @@ class SneakstersLevel:
 		GuardArrayOffset = len(packed) + headerPacker.size
 		GuardArrayData = self.PackGuardData()
 
-		return headerPacker.pack(b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData)) + packed
+		packed += GuardArrayData
+
+		return headerPacker.pack(b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData), GuardArrayOffset, len(GuardArrayData)) + packed
 		
 	def UnpackLevelData(self, data):
 		headerUnpacker = struct.Struct('4sIIII')
@@ -362,15 +364,31 @@ class SneakstersLevel:
 
 		for guard in self.guards:
 			singleGuardHeaderPacker = struct.Struct('HH H')
-			singleGuardHeaderData = (guard.x, guard.y, len(guard.nodes))
+			singleGuardHeaderData = (int(guard.x), int(guard.y), len(guard.nodes))
 			packed += singleGuardHeaderPacker.pack(*singleGuardHeaderData)
 
 			for node in guard.nodes:
 				nodePacker = struct.Struct('HH')
-				nodeData = (node.x, node.y)
+				nodeData = (int(node.x), int(node.y))
 				packed += nodePacker.pack(*nodeData)
 
 		return packed
+
+	def UnpackGuardData(self, data):
+		headerUnpacker = struct.Struct('4sI')
+		
+		guardHeader = headerUnpacker.unpack(data[:8])
+
+		noGuards = guardHeader[1]
+
+		for i in range(noGuards):
+			guardUnpacker = struct.Struct('HH H')
+
+			# I'm not sure how to calculate the unpack position for each guard (it changes based on the number of nodes the previous guards had)
+			#unpackedGuardInfo = guardUnpacker.unpack_from(data, 8 + (guardUnpacker.size * i))
+
+
+
 
 
 	def PackTileData(self):
