@@ -219,6 +219,7 @@ class Window(QtWidgets.QMainWindow):
 
 		self.actorInfo_nodeList = QtWidgets.QListWidget()
 		self.actorInfo_addNodeButton = QtWidgets.QPushButton("Add Node")
+		self.actorInfo_addNodeButton.clicked.connect(self.AddNodeToGuard)
 		self.actorInfo_removeNodeButton = QtWidgets.QPushButton("Remove Node")
 		self.actorInfo_nodeLayout = QtWidgets.QHBoxLayout()
 		self.actorInfo_nodeLayout.addWidget(self.actorInfo_addNodeButton)
@@ -482,6 +483,10 @@ class Window(QtWidgets.QMainWindow):
 				self.actorInfo_addNodeButton.setEnabled(True)
 				self.actorInfo_removeNodeButton.setEnabled(True)
 
+			elif type(currentSelected) is sneaklib.GuardNode:
+				self.actorInfo_actorName.setText("Guard")
+				self.actorInfo_actorPos.setText("(" + str(currentSelected.guard.x) + ", " + str(currentSelected.guard.y) + ")")
+
 		elif len(current_level.selectedActors) > 1:
 			self.actorInfo_actorName.setText("Multiple actors selected")
 			self.actorInfo_actorPos.setText("")
@@ -495,6 +500,42 @@ class Window(QtWidgets.QMainWindow):
 			self.actorInfo_actorIconLabel.clear()
 			self.actorInfo_addNodeButton.setEnabled(False)
 			self.actorInfo_removeNodeButton.setEnabled(False)
+
+
+	def AddNodeToGuard(self):
+		if type(current_level.selectedActors[0]) is sneaklib.Guard:
+			x = current_level.selectedActors[0].x
+			y = current_level.selectedActors[0].y
+		else:
+			x = current_level.selectedActors[0].guard.x
+			y = current_level.selectedActors[0].guard.y
+
+		newNode = sneaklib.GuardNode(x, y)
+
+		if type(current_level.selectedActors[0]) is sneaklib.Guard:
+			current_level.selectedActors[0].AddNode(newNode)
+		else:
+			current_level.selectedActors[0].guard.AddNode(newNode)
+
+		self.gridScene.update()
+
+		self.UpdateNodeList()
+
+	def UpdateNodeList(self):
+		if type(current_level.selectedActors[0]) is sneaklib.Guard:
+			guard = current_level.selectedActors[0]
+		else:
+			guard = current_level.selectedActors[0].guard
+
+		for i in reversed(range(self.actorInfo_nodeList.count())):
+			self.actorInfo_nodeList.takeItem(i)
+
+		for node in guard.nodes:
+			self.actorInfo_nodeList.addItem("(" + str(node.x) + ", " + str(node.y) + ")")
+
+
+			
+		
 
 
 ##########################################

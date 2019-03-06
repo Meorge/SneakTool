@@ -49,6 +49,7 @@ class Guard(Actor):
 		return (QtCore.QRectF(self.x * size, self.y * size, size, size))
 
 	def draw(self, painter, size, selected = False):
+		#print(self.nodes)
 		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/guard_selected.png" if selected else "official_sneaksters/guard.png")))
 
 	
@@ -58,7 +59,14 @@ class GuardNode(Actor):
 		self.guard = None
 
 	def draw(self, painter, size, selected = False):
-		painter.setBrush(QtGui.QBrush(QtGui.QColor(0, 200, 0)))
+		print("painting a node")
+
+		fillColor = QtGui.QColor(0, 150, 0)
+		if selected: fillColor = QtGui.QColor(0, 200, 0)
+		painter.setBrush(QtGui.QBrush(fillColor))
+		painter.setPen(QtGui.QPen(QtGui.QColor(0, 170, 0)))
+
+		#painter.drawRect(self.x * size, self.y * size, size, size)
 		painter.drawEllipse(self.x * size, self.y * size, size, size)
 
 
@@ -141,9 +149,14 @@ class SneakstersLevel:
 	def ObjectAt(self, x, y):
 		obj = self.GemstoneAt(x,y)
 		if obj:return obj
+
 		obj = self.GuardAt(x,y)
 		if obj:return obj
+
+		obj = self.GuardNodeAt(x,y)
+		if obj:return obj
 		return None
+
 
 	def moveSelectedObjects(self, x, y):
 		for actor in self.selectedActors:
@@ -159,6 +172,13 @@ class SneakstersLevel:
 		for guard in self.guards:
 			if guard.x == x and guard.y == y:
 				return guard
+		return None
+
+	def GuardNodeAt(self, x, y):
+		for guard in self.guards:
+			for node in guard.nodes:
+				if node.x == x and node.y == y:
+					return node
 		return None
 
 
