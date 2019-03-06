@@ -321,7 +321,7 @@ class SneakstersLevel:
 
 
 	def PackLevelData(self):
-		headerPacker = struct.Struct('4sIIIIII')
+		headerPacker = struct.Struct('4s II II II')
 
 		# start the packing buffer
 		packed = b''
