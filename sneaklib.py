@@ -48,6 +48,18 @@ class Guard(Actor):
 
 	def boundingRect(self):
 		return (QtCore.QRectF(self.x * size, self.y * size, size, size))
+	
+	def packNodeData(self):
+		packed = b''
+		for ni in range(len(self.nodes)): #I know we could just iterate directly, but I identify by id just to make sure we're in order.
+			packed += struct.pack("2H", int(self.nodes[ni].x), int(self.nodes[ni].y))
+		return packed
+
+	def unpackNodeData(self, data, noNodes, offset):
+		for ni in range(noNodes): #I know we could just iterate directly, but I identify by id just to make sure we're in order.
+			node = GuardNode(*struct.unpack("2H", data[offset+4*ni : offset+4+4*ni]))
+			node.guard = self
+			self.nodes.append(node)
 
 	def draw(self, painter, size, selected = False):
 		#print(self.nodes)
@@ -309,7 +321,7 @@ class SneakstersLevel:
 
 
 	def PackLevelData(self):
-		headerPacker = struct.Struct('4sIIII')
+		headerPacker = struct.Struct('4sIIIIII')
 
 		# start the packing buffer
 		packed = b''
@@ -324,8 +336,9 @@ class SneakstersLevel:
 
 		# add the tile data to the packing buffer
 		packed += TileArrayData
-
+		
 		# some null buffer I think?
+		#  -	For file alignment, yes.
 		while ((len(packed) + headerPacker.size) % 0x10)!=0:
 			packed+=b'\0'
 
@@ -336,7 +349,6 @@ class SneakstersLevel:
 		# add gem data to packing buffer
 		packed += GemstoneArrayData
 
-
 		# tbh I'm just following what John is doing here
 		while ((len(packed) + headerPacker.size) % 0x10) != 0:
 			packed += b'\0'
@@ -344,13 +356,18 @@ class SneakstersLevel:
 		GuardArrayOffset = len(packed) + headerPacker.size
 		GuardArrayData = self.PackGuardData()
 
-		return headerPacker.pack(b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData)) + packed
+		# add gem data to packing buffer
+		packed += GuardArrayData
+
+
+		return headerPacker.pack(b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData), GuardArrayOffset, len(GuardArrayData)) + packed
 		
 	def UnpackLevelData(self, data):
-		headerUnpacker = struct.Struct('4sIIII')
+		headerUnpacker = struct.Struct('4sIIIIII')
 		header = headerUnpacker.unpack(data[:headerUnpacker.size])
 		self.UnpackTileData(data[header[1]:header[1]+header[2]])
 		self.UnpackGemstoneData(data[header[3]:header[3]+header[4]])
+		self.UnpackGuardData(data[header[5]:header[5]+header[6]])
 
 
 	def PackGuardData(self):
@@ -359,19 +376,26 @@ class SneakstersLevel:
 		guardHeaderData = (b"PTRL", noGuards)
 
 		packed = guardHeader.pack(*guardHeaderData)
-
+		nodeData = b''
+		singleGuardHeaderPacker = struct.Struct('HH H i')
 		for guard in self.guards:
-			singleGuardHeaderPacker = struct.Struct('HH H')
-			singleGuardHeaderData = (guard.x, guard.y, len(guard.nodes))
+			singleGuardHeaderData = (int(guard.x), int(guard.y), len(guard.nodes), singleGuardHeaderPacker.size * noGuards + guardHeader.size + len(nodeData))
+			nodeData += guard.packNodeData()
 			packed += singleGuardHeaderPacker.pack(*singleGuardHeaderData)
-
-			for node in guard.nodes:
-				nodePacker = struct.Struct('HH')
-				nodeData = (node.x, node.y)
-				packed += nodePacker.pack(*nodeData)
-
+		packed += nodeData
 		return packed
 
+	def UnpackGuardData(self, data):
+		guardHeader = struct.Struct('4sI')
+		header = guardHeader.unpack(data[:guardHeader.size])
+		noGuards = header[1]
+		
+		singleGuardHeaderUnpacker = struct.Struct('HH H i')
+		for gi in range(noGuards):
+			singleGuardHeaderData = singleGuardHeaderUnpacker.unpack(data[guardHeader.size + singleGuardHeaderUnpacker.size * gi: guardHeader.size + singleGuardHeaderUnpacker.size +  singleGuardHeaderUnpacker.size * gi])
+			guard = Guard(singleGuardHeaderData[0], singleGuardHeaderData[1])
+			guard.unpackNodeData(data, singleGuardHeaderData[2], singleGuardHeaderData[3])
+			self.guards.append(guard)
 
 	def PackTileData(self):
 		numberOfTiles = len(self.tiles)
