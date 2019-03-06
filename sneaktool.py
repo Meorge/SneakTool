@@ -587,7 +587,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 
 		node.EstablishInputsOutputs()
 		
-	def clearObjects(self, scene):
+	def clearObjects(self):
 		for gem in current_level.gemstones:
 			self.removeItem(gem)
 

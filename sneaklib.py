@@ -310,17 +310,39 @@ class SneakstersLevel:
 
 	def PackLevelData(self):
 		headerPacker = struct.Struct('4sIIII')
+
+		# start the packing buffer
 		packed = b''
+
+
 		while ((len(packed) + headerPacker.size) % 0x10)!=0:
 			packed+=b'\0'
+
+		# calculate offset for tile section
 		TileArrayOffset = len(packed) + headerPacker.size
 		TileArrayData = self.PackTileData()
+
+		# add the tile data to the packing buffer
 		packed += TileArrayData
+
+		# some null buffer I think?
 		while ((len(packed) + headerPacker.size) % 0x10)!=0:
 			packed+=b'\0'
+
+		# calculate offset and data for gemstone section
 		GemstoneArrayOffset = len(packed) + headerPacker.size
 		GemstoneArrayData = self.PackGemstoneData()
+
+		# add gem data to packing buffer
 		packed += GemstoneArrayData
+
+
+		# tbh I'm just following what John is doing here
+		while ((len(packed) + headerPacker.size) % 0x10) != 0:
+			packed += b'\0'
+
+		GuardArrayOffset = len(packed) + headerPacker.size
+		GuardArrayData = self.PackGuardData()
 
 		return headerPacker.pack(b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData)) + packed
 		
@@ -329,6 +351,27 @@ class SneakstersLevel:
 		header = headerUnpacker.unpack(data[:headerUnpacker.size])
 		self.UnpackTileData(data[header[1]:header[1]+header[2]])
 		self.UnpackGemstoneData(data[header[3]:header[3]+header[4]])
+
+
+	def PackGuardData(self):
+		noGuards = len(self.guards)
+		guardHeader = struct.Struct('4sI')
+		guardHeaderData = (b"PTRL", noGuards)
+
+		packed = guardHeader.pack(*guardHeaderData)
+
+		for guard in self.guards:
+			singleGuardHeaderPacker = struct.Struct('HH H')
+			singleGuardHeaderData = (guard.x, guard.y, len(guard.nodes))
+			packed += singleGuardHeaderPacker.pack(*singleGuardHeaderData)
+
+			for node in guard.nodes:
+				nodePacker = struct.Struct('HH')
+				nodeData = (node.x, node.y)
+				packed += nodePacker.pack(*nodeData)
+
+		return packed
+
 
 	def PackTileData(self):
 		numberOfTiles = len(self.tiles)
