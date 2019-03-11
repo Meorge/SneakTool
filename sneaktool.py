@@ -443,6 +443,7 @@ class Window(QtWidgets.QMainWindow):
 	def UpdateActorList(self):
 		self.UpdateGemstoneList()
 		self.UpdateGuardList()
+
 	def UpdateGemstoneList(self):
 		for i in reversed(range(self.currentActorsWidget_Gems.childCount())):
 			self.currentActorsWidget_Gems.removeChild(self.currentActorsWidget_Gems.child(i))
@@ -485,7 +486,19 @@ class Window(QtWidgets.QMainWindow):
 
 			elif type(currentSelected) is sneaklib.GuardNode:
 				self.actorInfo_actorName.setText("Guard")
+				guardIco = QtGui.QPixmap(icons_path + "official_sneaksters/guard.png")
+				self.actorInfo_actorIconLabel.setPixmap(guardIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
+				self.actorInfo_addNodeButton.setEnabled(True)
+				self.actorInfo_removeNodeButton.setEnabled(True)
 				self.actorInfo_actorPos.setText("(" + str(currentSelected.guard.x) + ", " + str(currentSelected.guard.y) + ")")
+
+			elif type(currentSelected) is sneaklib.GemSack:
+				self.actorInfo_actorName.setText("Gem Sack")
+				gemsackIco = QtGui.QPixmap(icons_path + "official_sneaksters/gem_sack_ico.png")
+				self.actorInfo_actorIconLabel.setPixmap(gemsackIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
+
+				self.actorInfo_addNodeButton.setEnabled(False)
+				self.actorInfo_removeNodeButton.setEnabled(False)
 
 		elif len(current_level.selectedActors) > 1:
 			self.actorInfo_actorName.setText("Multiple actors selected")
@@ -707,6 +720,16 @@ class GridScene(QtWidgets.QGraphicsScene):
 
 				print(current_level.guards)
 				#self.parent.UpdateNodeList()
+
+			elif obj_selected == 2: ### GEM SACK
+				gemSack = current_level.GemSackAt(*array)
+				if draw_mode == 0:
+					if not gemSack:
+						gemSack = sneaklib.GemSack(*array)
+						current_level.gemSacks.append(gemSack)
+				elif draw_mode == 1:
+					if gemSack:
+						current_level.gemSacks.remove(gemSack)
 			self.parent.UpdateNodeList()
 						
 

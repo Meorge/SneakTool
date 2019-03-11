@@ -34,6 +34,16 @@ class Gemstone(Actor):
 		#painter.drawRect(self.x * size, self.y * size, size, size)
 		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/gem_selected.png" if selected else "official_sneaksters/gem.png")))
 
+class GemSack(Actor):
+	def __init__(self, x, y):
+		super().__init__(x, y)
+
+	def boundingRect(self):
+		return QtCore.QRectF(self.x * size, self.y * size, size, size)
+
+	def draw(self, painter, size, selected = False):
+		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/gem_sack_ico.png" if selected else "official_sneaksters/gem_sack_ico.png")))
+
 class Guard(Actor):
 	def __init__(self, x, y):
 		super().__init__(x, y)
@@ -177,6 +187,7 @@ class SneakstersLevel:
 		self.tiles = []
 		self.gemstones = []
 		self.guards = []
+		self.gemSacks = []
 
 
 		self.selectedActors = []
@@ -200,6 +211,9 @@ class SneakstersLevel:
 
 		obj = self.GuardNodeAt(x,y)
 		if obj:return obj
+
+		obj = self.GemSackAt(x,y)
+		if obj:return obj
 		return None
 
 
@@ -211,6 +225,12 @@ class SneakstersLevel:
 		for gem in self.gemstones:
 			if gem.x == x and gem.y == y:
 				return gem
+		return None
+
+	def GemSackAt(self, x, y):
+		for sack in self.gemSacks:
+			if sack.x == x and sack.y == y:
+				return sack
 		return None
 
 	def GuardAt(self, x, y):
@@ -312,6 +332,9 @@ class SneakstersLevel:
 
 		for gem in self.gemstones:
 			gem.draw(painter, size, gem in self.selectedActors)
+
+		for sack in self.gemSacks:
+			sack.draw(painter, size, sack in self.selectedActors)
 
 		for guard in self.guards:
 			for ni in range(len(guard.nodes)):
