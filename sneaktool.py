@@ -467,7 +467,7 @@ class Window(QtWidgets.QMainWindow):
 	def UpdateSelection(self):
 		if len(current_level.selectedActors) == 1:
 			currentSelected = current_level.selectedActors[0]
-			self.actorInfo_actorPos.setText("(" + str(currentSelected.x) + ", " + str(currentSelected.y) + ")")
+			self.actorInfo_actorPos.setText("(" + str(int(currentSelected.x)) + ", " + str(int(currentSelected.y)) + ")")
 			if type(currentSelected) is sneaklib.Gemstone:
 				self.actorInfo_actorName.setText("Gemstone")
 				gemIco = QtGui.QPixmap(icons_path + "official_sneaksters/gem.png")
@@ -522,16 +522,23 @@ class Window(QtWidgets.QMainWindow):
 		self.UpdateNodeList()
 
 	def UpdateNodeList(self):
-		if type(current_level.selectedActors[0]) is sneaklib.Guard:
-			guard = current_level.selectedActors[0]
-		else:
-			guard = current_level.selectedActors[0].guard
-
+		print("UPDATE NODE LIST")
 		for i in reversed(range(self.actorInfo_nodeList.count())):
 			self.actorInfo_nodeList.takeItem(i)
 
+		if len(current_level.selectedActors) == 0:
+			return
+		if type(current_level.selectedActors[0]) is sneaklib.Guard:
+			guard = current_level.selectedActors[0]
+		elif type(current_level.selectedActors[0]) is sneaklib.GuardNode:
+			guard = current_level.selectedActors[0].guard
+		else:
+			return
+
+
+
 		for node in guard.nodes:
-			self.actorInfo_nodeList.addItem("(" + str(node.x) + ", " + str(node.y) + ")")
+			self.actorInfo_nodeList.addItem("(" + str(int(node.x)) + ", " + str(int(node.y)) + ")")
 
 
 			
@@ -620,6 +627,8 @@ class GridScene(QtWidgets.QGraphicsScene):
 			if obj:
 				if obj not in current_level.selectedActors: current_level.selectedActors.append(obj)
 				else: current_level.selectedActors.remove(obj)
+
+			self.parent.UpdateNodeList()
 		elif obj_mode == 0:
 			if draw_mode == 0:
 				tile = current_level.TileAt(*array)
@@ -697,6 +706,8 @@ class GridScene(QtWidgets.QGraphicsScene):
 						current_level.guards.remove(guard)
 
 				print(current_level.guards)
+				#self.parent.UpdateNodeList()
+			self.parent.UpdateNodeList()
 						
 
 		elif obj_mode == 4:
@@ -726,6 +737,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		self.parent.UpdateSelection()
 		self.parent.UpdateGemstoneList()
 		self.parent.UpdateGuardList()
+		self.parent.UpdateNodeList()
 		fixedX = event.scenePos().x()
 		fixedY = event.scenePos().y()
 		tileX = fixedX // CELL_SIZE
