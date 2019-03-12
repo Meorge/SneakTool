@@ -255,8 +255,12 @@ class Window(QtWidgets.QMainWindow):
 		self.currentActorsWidget_Grds = QtWidgets.QTreeWidgetItem()
 		self.currentActorsWidget_Grds.setText(0, "Guards")
 
+		self.currentActorsWidget_GemSacks = QtWidgets.QTreeWidgetItem()
+		self.currentActorsWidget_GemSacks.setText(0, "Gem Sacks")
+
 
 		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_Grds)
+		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_GemSacks)
 
 
 		### BOTTOM BAR
@@ -454,6 +458,7 @@ class Window(QtWidgets.QMainWindow):
 			self.currentActorsWidget_Gems.addChild(newItem)
 		
 		self.currentActorsWidget_Gems.setText(0, "Gemstones (" + str(len(current_level.gemstones)) + ")")
+
 	def UpdateGuardList(self):
 		for i in reversed(range(self.currentActorsWidget_Grds.childCount())):
 			self.currentActorsWidget_Grds.removeChild(self.currentActorsWidget_Grds.child(i))
@@ -464,6 +469,17 @@ class Window(QtWidgets.QMainWindow):
 			self.currentActorsWidget_Grds.addChild(newItem)
 		
 		self.currentActorsWidget_Grds.setText(0, "Guards (" + str(len(current_level.guards)) + ")")
+
+	def UpdateGemSackList(self):
+		for i in reversed(range(self.currentActorsWidget_GemSacks.childCount())):
+			self.currentActorsWidget_GemSacks.removeChild(self.currentActorsWidget_GemSacks.child(i))
+
+		for g in current_level.gemSacks:
+			newItem = QtWidgets.QTreeWidgetItem()
+			newItem.setText(0, "(" + str(g.x) + ", " + str(g.y) + ")")
+			self.currentActorsWidget_GemSacks.addChild(newItem)
+		
+		self.currentActorsWidget_GemSacks.setText(0, "Gem Sacks (" + str(len(current_level.gemSacks)) + ")")
 
 	def UpdateSelection(self):
 		if len(current_level.selectedActors) == 1:
@@ -730,6 +746,8 @@ class GridScene(QtWidgets.QGraphicsScene):
 				elif draw_mode == 1:
 					if gemSack:
 						current_level.gemSacks.remove(gemSack)
+
+				self.parent.UpdateGemSackList()
 			self.parent.UpdateNodeList()
 						
 
@@ -761,6 +779,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		self.parent.UpdateGemstoneList()
 		self.parent.UpdateGuardList()
 		self.parent.UpdateNodeList()
+		self.parent.UpdateGemSackList()
 		fixedX = event.scenePos().x()
 		fixedY = event.scenePos().y()
 		tileX = fixedX // CELL_SIZE

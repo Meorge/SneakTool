@@ -344,7 +344,7 @@ class SneakstersLevel:
 
 
 	def PackLevelData(self):
-		headerPacker = struct.Struct('4s II II II')
+		headerPacker = struct.Struct('4s II II II II')
 
 		# start the packing buffer
 		packed = b''
@@ -382,15 +382,23 @@ class SneakstersLevel:
 		# add gem data to packing buffer
 		packed += GuardArrayData
 
+		while ((len(packed) + headerPacker.size) % 0x10) != 0:
+			packed += b'\0'
 
-		return headerPacker.pack(b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData), GuardArrayOffset, len(GuardArrayData)) + packed
+		GemSackArrayOffset = len(packed) + headerPacker.size
+		GemSackArrayData = self.PackGemSackData()
+
+		packed += GemSackArrayData
+
+		return headerPacker.pack(b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData), GuardArrayOffset, len(GuardArrayData), GemSackArrayOffset, len(GemSackArrayData)) + packed
 		
 	def UnpackLevelData(self, data):
-		headerUnpacker = struct.Struct('4sIIIIII')
+		headerUnpacker = struct.Struct('4s II II II II')
 		header = headerUnpacker.unpack(data[:headerUnpacker.size])
 		self.UnpackTileData(data[header[1]:header[1]+header[2]])
 		self.UnpackGemstoneData(data[header[3]:header[3]+header[4]])
 		self.UnpackGuardData(data[header[5]:header[5]+header[6]])
+		self.UnpackGemSackData(data[header[7]:header[7] + header[8]])
 
 
 	def PackGuardData(self):
@@ -483,6 +491,34 @@ class SneakstersLevel:
 			unpacked = gemUnpacker.unpack_from(data, (8 + gemUnpacker.size * i))
 			gem = Gemstone(unpacked[0], unpacked[1])
 			self.gemstones.append(gem)
+
+
+	def PackGemSackData(self):
+		headerPacker = struct.Struct('4sI')
+		header = (b"GSAC", len(self.gemSacks))
+
+		packed = headerPacker.pack(*header)
+
+		for sack in self.gemSacks:
+			sackPacker = struct.Struct('HHH')
+			sackData = (int(sack.x), int(sack.y), 0) # flag int again
+			packed += sackPacker.pack(*sackData)
+
+		return packed
+
+	def UnpackGemSackData(self, data):
+		headerUnpacker = struct.Struct('4sI')
+
+		sackHeader = []
+		sackHeader = headerUnpacker.unpack(data[:8])
+
+		numberOfSacks = sackHeader[1]
+
+		for i in range(numberOfSacks):
+			sackUnpacker = struct.Struct('HHH')
+			unpacked = sackUnpacker.unpack_from(data, (8 + sackUnpacker.size * i))
+			sack = GemSack(unpacked[0], unpacked[1])
+			self.gemSacks.append(sack)
 
 	#def PackLevelData(self):
 	#	roomData = self.PackTileData()
