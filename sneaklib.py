@@ -20,6 +20,15 @@ class Actor(SneakObj):
 		self.x+=x
 		self.y+=y
 
+class ThiefSpawnPoint(Actor):
+	def __init__(self, x, y):
+		super().__init__(x, y)
+
+	def boundingRect(self):
+		return QtCore.QRectF(self.x * size, self.y * size, size, size)
+
+	def draw(self, painter, size, selected = False):
+		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/thief_ico.png" if selected else "official_sneaksters/thief_ico.png")))
 
 class Gemstone(Actor):
 	def __init__(self, x, y):
@@ -181,13 +190,14 @@ class Tile(SneakObj):
 class SneakstersLevel:
 	#send_nudes = [[200.0, 240.0], [160.0, 240.0], [120.0, 240.0], [120.0, 280.0], [120.0, 320.0], [160.0, 320.0], [200.0, 320.0], [200.0, 360.0], [200.0, 400.0], [160.0, 400.0], [120.0, 400.0], [280.0, 240.0], [280.0, 280.0], [280.0, 320.0], [280.0, 360.0], [280.0, 400.0], [320.0, 400.0], [360.0, 400.0], [320.0, 320.0], [360.0, 320.0], [320.0, 240.0], [360.0, 240.0], [440.0, 240.0], [440.0, 280.0], [440.0, 320.0], [440.0, 360.0], [440.0, 400.0], [480.0, 280.0], [520.0, 320.0], [560.0, 360.0], [560.0, 400.0], [560.0, 320.0], [560.0, 280.0], [560.0, 240.0], [640.0, 240.0], [640.0, 280.0], [640.0, 320.0], [640.0, 360.0], [640.0, 400.0], [680.0, 240.0], [720.0, 280.0], [720.0, 320.0], [720.0, 360.0], [680.0, 400.0], [80.0, 480.0], [80.0, 520.0], [80.0, 560.0], [80.0, 600.0], [80.0, 640.0], [120.0, 520.0], [160.0, 560.0], [200.0, 480.0], [200.0, 520.0], [200.0, 560.0], [200.0, 600.0], [200.0, 640.0], [280.0, 480.0], [280.0, 520.0], [280.0, 560.0], [280.0, 600.0], [280.0, 640.0], [320.0, 640.0], [360.0, 640.0], [360.0, 600.0], [360.0, 560.0], [360.0, 520.0], [360.0, 480.0], [440.0, 480.0], [440.0, 520.0], [440.0, 560.0], [440.0, 600.0], [440.0, 640.0], [480.0, 480.0], [520.0, 520.0], [520.0, 560.0], [520.0, 600.0], [480.0, 640.0], [600.0, 480.0], [600.0, 520.0], [600.0, 560.0], [600.0, 600.0], [600.0, 640.0], [640.0, 640.0], [680.0, 640.0], [640.0, 560.0], [680.0, 560.0], [680.0, 480.0], [640.0, 480.0], [840.0, 480.0], [800.0, 480.0], [760.0, 480.0], [760.0, 520.0], [760.0, 560.0], [800.0, 560.0], [840.0, 560.0], [840.0, 600.0], [840.0, 640.0], [800.0, 640.0], [760.0, 640.0]]
 	
-	def __init__(self):
+	def __init__(self, x=100, y=100):
 		super().__init__()
 
 		self.tiles = []
 		self.gemstones = []
 		self.guards = []
 		self.gemSacks = []
+		self.thiefSpawnPoint = ThiefSpawnPoint(x, y)
 
 
 		self.selectedActors = []
@@ -214,7 +224,13 @@ class SneakstersLevel:
 
 		obj = self.GemSackAt(x,y)
 		if obj:return obj
+
+		if x == self.thiefSpawnPoint.x and y == self.thiefSpawnPoint.y:
+			return self.thiefSpawnPoint
+		
 		return None
+
+
 
 
 	def moveSelectedObjects(self, x, y):
@@ -342,9 +358,11 @@ class SneakstersLevel:
 				guard.nodes[ni].drawPath(painter, size, guard.nodes[ni].guard if ni == 0 else None, guard.nodes[ni+1] if ni < (len(guard.nodes)-1) else guard.nodes[ni].guard)
 			guard.draw(painter, size, guard in self.selectedActors)
 
+		self.thiefSpawnPoint.draw(painter, size, self.thiefSpawnPoint in self.selectedActors)
+
 
 	def PackLevelData(self):
-		headerPacker = struct.Struct('4s II II II II')
+		headerPacker = struct.Struct('4s II II II II I')
 
 		# start the packing buffer
 		packed = b''
@@ -390,15 +408,28 @@ class SneakstersLevel:
 
 		packed += GemSackArrayData
 
-		return headerPacker.pack(b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData), GuardArrayOffset, len(GuardArrayData), GemSackArrayOffset, len(GemSackArrayData)) + packed
+
+
+		# now for the spawn point... doin the same thing
+		while ((len(packed) + headerPacker.size) % 0x10) != 0:
+			packed += b'\0'
+
+		SpawnPointArrayOffset = len(packed) + headerPacker.size
+		SpawnPointData = self.PackSpawnPointData()
+
+		packed += SpawnPointData
+
+
+		return headerPacker.pack(b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData), GuardArrayOffset, len(GuardArrayData), GemSackArrayOffset, len(GemSackArrayData), SpawnPointArrayOffset) + packed
 		
 	def UnpackLevelData(self, data):
-		headerUnpacker = struct.Struct('4s II II II II')
+		headerUnpacker = struct.Struct('4s II II II II I')
 		header = headerUnpacker.unpack(data[:headerUnpacker.size])
 		self.UnpackTileData(data[header[1]:header[1]+header[2]])
 		self.UnpackGemstoneData(data[header[3]:header[3]+header[4]])
 		self.UnpackGuardData(data[header[5]:header[5]+header[6]])
 		self.UnpackGemSackData(data[header[7]:header[7] + header[8]])
+		self.UnpackSpawnPointData(data[header[9]:])
 
 
 	def PackGuardData(self):
@@ -519,6 +550,29 @@ class SneakstersLevel:
 			unpacked = sackUnpacker.unpack_from(data, (8 + sackUnpacker.size * i))
 			sack = GemSack(unpacked[0], unpacked[1])
 			self.gemSacks.append(sack)
+
+	def PackSpawnPointData(self):
+		headerPacker = struct.Struct('4s HH')
+
+		packed = headerPacker.pack(b'SPWN', int(self.thiefSpawnPoint.x), int(self.thiefSpawnPoint.y))
+
+		print("Packing thief spawn point as {},{}".format(self.thiefSpawnPoint.x, self.thiefSpawnPoint.y))
+
+		return packed
+
+	def UnpackSpawnPointData(self, data):
+		headerUnpacker = struct.Struct('4s HH')
+
+		unpacked = headerUnpacker.unpack(data[:8])
+
+		self.thiefSpawnPoint.x = unpacked[1]
+		self.thiefSpawnPoint.y = unpacked[2]
+
+		print("Thief spawn point is {}, {}".format(self.thiefSpawnPoint.x, self.thiefSpawnPoint.y))
+
+
+
+		
 
 	#def PackLevelData(self):
 	#	roomData = self.PackTileData()
