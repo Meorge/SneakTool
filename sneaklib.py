@@ -30,6 +30,17 @@ class ThiefSpawnPoint(Actor):
 	def draw(self, painter, size, selected = False):
 		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/thief_ico.png" if selected else "official_sneaksters/thief_ico.png")))
 
+
+class ExitManhole(Actor):
+	def __init__(self, x, y):
+		super().__init__(x, y)
+
+	def boundingRect(self):
+		return QtCore.QRectF(self.x * size, self.y * size, size, size)
+
+	def draw(self, painter, size, selected = False):
+		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/manhole_ico.png" if selected else "official_sneaksters/manhole_ico.png")))
+
 class Gemstone(Actor):
 	def __init__(self, x, y):
 		super().__init__(x, y)
@@ -227,14 +238,15 @@ class Tile(SneakObj):
 class SneakstersLevel:
 	#send_nudes = [[200.0, 240.0], [160.0, 240.0], [120.0, 240.0], [120.0, 280.0], [120.0, 320.0], [160.0, 320.0], [200.0, 320.0], [200.0, 360.0], [200.0, 400.0], [160.0, 400.0], [120.0, 400.0], [280.0, 240.0], [280.0, 280.0], [280.0, 320.0], [280.0, 360.0], [280.0, 400.0], [320.0, 400.0], [360.0, 400.0], [320.0, 320.0], [360.0, 320.0], [320.0, 240.0], [360.0, 240.0], [440.0, 240.0], [440.0, 280.0], [440.0, 320.0], [440.0, 360.0], [440.0, 400.0], [480.0, 280.0], [520.0, 320.0], [560.0, 360.0], [560.0, 400.0], [560.0, 320.0], [560.0, 280.0], [560.0, 240.0], [640.0, 240.0], [640.0, 280.0], [640.0, 320.0], [640.0, 360.0], [640.0, 400.0], [680.0, 240.0], [720.0, 280.0], [720.0, 320.0], [720.0, 360.0], [680.0, 400.0], [80.0, 480.0], [80.0, 520.0], [80.0, 560.0], [80.0, 600.0], [80.0, 640.0], [120.0, 520.0], [160.0, 560.0], [200.0, 480.0], [200.0, 520.0], [200.0, 560.0], [200.0, 600.0], [200.0, 640.0], [280.0, 480.0], [280.0, 520.0], [280.0, 560.0], [280.0, 600.0], [280.0, 640.0], [320.0, 640.0], [360.0, 640.0], [360.0, 600.0], [360.0, 560.0], [360.0, 520.0], [360.0, 480.0], [440.0, 480.0], [440.0, 520.0], [440.0, 560.0], [440.0, 600.0], [440.0, 640.0], [480.0, 480.0], [520.0, 520.0], [520.0, 560.0], [520.0, 600.0], [480.0, 640.0], [600.0, 480.0], [600.0, 520.0], [600.0, 560.0], [600.0, 600.0], [600.0, 640.0], [640.0, 640.0], [680.0, 640.0], [640.0, 560.0], [680.0, 560.0], [680.0, 480.0], [640.0, 480.0], [840.0, 480.0], [800.0, 480.0], [760.0, 480.0], [760.0, 520.0], [760.0, 560.0], [800.0, 560.0], [840.0, 560.0], [840.0, 600.0], [840.0, 640.0], [800.0, 640.0], [760.0, 640.0]]
 	
-	def __init__(self, x=100, y=100):
+	def __init__(self, spawnX=100, spawnY=100, exitX=100, exitY=101):
 		super().__init__()
 
 		self.tiles = []
 		self.gemstones = []
 		self.guards = []
 		self.gemSacks = []
-		self.thiefSpawnPoint = ThiefSpawnPoint(x, y)
+		self.thiefSpawnPoint = ThiefSpawnPoint(spawnX, spawnY)
+		self.exitManhole = ExitManhole(exitX, exitY)
 
 
 		self.selectedActors = []
@@ -264,6 +276,9 @@ class SneakstersLevel:
 
 		if x == self.thiefSpawnPoint.x and y == self.thiefSpawnPoint.y:
 			return self.thiefSpawnPoint
+
+		if x == self.exitManhole.x and y == self.exitManhole.y:
+			return self.exitManhole
 		
 		return None
 
@@ -402,6 +417,7 @@ class SneakstersLevel:
 			guard.draw(painter, size, guard in self.selectedActors)
 
 		self.thiefSpawnPoint.draw(painter, size, self.thiefSpawnPoint in self.selectedActors)
+		self.exitManhole.draw(painter, size, self.exitManhole in self.selectedActors)
 
 
 	def PackLevelData(self):
@@ -597,23 +613,26 @@ class SneakstersLevel:
 			self.gemSacks.append(sack)
 
 	def PackSpawnPointData(self):
-		headerPacker = struct.Struct('4s HH')
+		headerPacker = struct.Struct('4s HH HH')
 
-		packed = headerPacker.pack(b'SPWN', int(self.thiefSpawnPoint.x), int(self.thiefSpawnPoint.y))
+		packed = headerPacker.pack(b'SPWN', int(self.thiefSpawnPoint.x), int(self.thiefSpawnPoint.y), int(self.exitManhole.x), int(self.exitManhole.y))
 
-		print("Packing thief spawn point as {},{}".format(self.thiefSpawnPoint.x, self.thiefSpawnPoint.y))
+		print("Packing thief spawn point as {},{} and exit manhole as ".format(self.thiefSpawnPoint.x, self.thiefSpawnPoint.y, self.exitManhole.x, self.exitManhole.y))
 
 		return packed
 
 	def UnpackSpawnPointData(self, data):
-		headerUnpacker = struct.Struct('4s HH')
+		headerUnpacker = struct.Struct('4s HH HH')
 
-		unpacked = headerUnpacker.unpack(data[:8])
+		unpacked = headerUnpacker.unpack(data[:12])
 
 		self.thiefSpawnPoint.x = unpacked[1]
 		self.thiefSpawnPoint.y = unpacked[2]
 
-		print("Thief spawn point is {}, {}".format(self.thiefSpawnPoint.x, self.thiefSpawnPoint.y))
+		self.exitManhole.x = unpacked[3]
+		self.exitManhole.y = unpacked[4]
+
+		print("Thief spawn point is {}, {} and exit manhole is at {}, {}".format(self.thiefSpawnPoint.x, self.thiefSpawnPoint.y, self.exitManhole.x, self.exitManhole.y))
 
 
 

@@ -265,12 +265,15 @@ class Window(QtWidgets.QMainWindow):
 
 		self.zoomInButton = QtWidgets.QPushButton("+")
 		self.zoomOutButton = QtWidgets.QPushButton("-")
+		self.centerButton = QtWidgets.QPushButton("Center")
 		self.zoomInButton.setFixedSize(32,32)
 		self.zoomOutButton.setFixedSize(32,32)
 		self.zoomInButton.clicked.connect(self.zoomIn)
+		self.centerButton.clicked.connect(self.centerView)
 		self.zoomOutButton.clicked.connect(self.zoomOut)
 		self.footerBar.addWidget(self.zoomInButton)
 		self.footerBar.addWidget(self.zoomOutButton)
+		self.footerBar.addWidget(self.centerButton)
 
 		
 		#self.FloorUpButton = QtWidgets.QPushButton("Go Upstairs")
@@ -337,8 +340,14 @@ class Window(QtWidgets.QMainWindow):
 		current_level.UnpackLevelData(file.read())
 		file.close()
 
-		self.gridView.centerOn(QtCore.QPoint(current_level.thiefSpawnPoint.x, current_level.thiefSpawnPoint.y))
+		# self.gridView.centerOn(QtCore.QPoint(current_level.thiefSpawnPoint.x, current_level.thiefSpawnPoint.y))
+		self.centerView()
 		self.UpdateActorList()
+		self.gridScene.update(self.gridScene.sceneRect())
+
+
+	def centerView(self):
+		self.gridView.centerOn(QtCore.QPointF(current_level.thiefSpawnPoint.x * sneaklib.size, current_level.thiefSpawnPoint.y * sneaklib.size))
 		self.gridScene.update(self.gridScene.sceneRect())
 
 
