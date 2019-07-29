@@ -69,6 +69,10 @@ class Guard(Actor):
 		for ni in range(noNodes): #I know we could just iterate directly, but I identify by id just to make sure we're in order.
 			node = GuardNode(*struct.unpack("2H", data[offset+4*ni : offset+4+4*ni]))
 			node.guard = self
+
+			
+
+			print("Raw: {},{}".format(node.x, node.y))
 			self.nodes.append(node)
 
 	def draw(self, painter, size, selected = False):
@@ -99,7 +103,7 @@ class GuardNode(Actor):
 
 		angle = atan2(fx2-fx1, fy2-fy1)
 
-		print(angle)
+		#print(angle)
 
 		s = sin(angle)
 		c = cos(angle)
@@ -115,7 +119,7 @@ class GuardNode(Actor):
 			self.__seriouslyDrawPath(painter, size, self.x, self.y, nextActor.x, nextActor.y)
 
 	def draw(self, painter, size, selected = False):
-		print("painting a node")
+		#print("painting a node")
 		fillColor = self.selectedFillColor if selected else self.fillColor
 		
 		painter.setBrush(QtGui.QBrush(fillColor))
@@ -128,42 +132,62 @@ class GuardNode(Actor):
 class Tile(SneakObj):
 	squareBrush = QtGui.QBrush(QtGui.QColor(170,170,170))
 	wallPen = QtGui.QPen(QtGui.QColor(240,0,0), 4)
-	diagWallPen = QtGui.QPen(QtGui.QColor(0,0,240), 4)
+	doorPen = QtGui.QPen(QtGui.QColor(0,0,240), 6)
 	clearPen = QtGui.QPen(QtGui.QColor(0,0,0,48))
 	def __init__(self, x, y, flags = 0):
 		super(Tile, self).__init__(x, y)
-		self.walls = [(flags & 1) != 0, ((flags>>1) & 1) != 0, ((flags>>2) & 1) != 0, ((flags>>3) & 1) != 0, ((flags>>4) & 1) != 0, ((flags>>5) & 1) != 0]
-		self.shape = (flags>>6)%4
+
+		"""
+		Flags stuff
+		0000 000X (bit 0, num 1)   - top wall
+		0000 00X0 (bit 1, num 2)   - right wall
+		0000 0X00 (bit 2, num 4)   - bottom wall
+		0000 X000 (bit 3, num 8)   - left wall
+
+		000X 0000 (bit 4, num 16)  - top door
+		00X0 0000 (bit 5, num 32)  - right door
+		0X00 0000 (bit 6, num 64)  - bottom door
+		X000 0000 (bit 7, num 128) - left door
+		"""
+
+		self.walls = [(flags & 1) != 0, ((flags>>1) & 1) != 0, ((flags>>2) & 1) != 0, ((flags>>3) & 1) != 0, ((flags>>4) & 1) != 0, ((flags>>5) & 1) != 0, ((flags>>6) & 1), ((flags>>7) & 1)]
 
 	def flags(self):
 		flag = 0
 		for i in range(len(self.walls)):
 			flag |= self.walls[i] << i
-		flag |= self.shape << 6
 		return flag
 
-	def drawDiagnalWalls(self,painter,dx,dy,size, show_disabled):
-		if self.walls[4] ^ show_disabled:
-			painter.drawLine(dx,		dy,			dx+size-1,	dy+size-1)
-		if self.walls[5] ^ show_disabled:
-			painter.drawLine(dx,		dy+size-1,	dx+size-1,	dy)
+		
+	"""
+	Had to get rid of diagonal walls in order to accomodate doors.
+	Perhaps one day they can come back :(
+	RIP Diagonal Walls, 28 February 2019 - 28 July 2019
+	"""
+	# def drawDiagnalWalls(self,painter,dx,dy,size, show_disabled):
+	# 	if self.walls[4] ^ show_disabled:
+	# 		painter.drawLine(dx,		dy,			dx+size-1,	dy+size-1)
+	# 	if self.walls[5] ^ show_disabled:
+	# 		painter.drawLine(dx,		dy+size-1,	dx+size-1,	dy)
 
 	def draw(self, painter, size, show_diag_walls = False):
 		painter.setBrush(self.squareBrush)
 		painter.setPen(self.clearPen)
 		dx = self.x*size
 		dy = self.y*size
-		if self.shape == 0:
-			painter.drawRect(dx, dy, size, size)
-		elif self.shape == 1:
-			painter.drawPolygon(QtCore.QPoint(dx, dy), QtCore.QPoint(dx+size-1, dy), QtCore.QPoint(dx, dy+size-1))
-		elif self.shape == 2:
-			painter.drawPolygon(QtCore.QPoint(dx+size-1, dy), QtCore.QPoint(dx+size-1, dy+size-1), QtCore.QPoint(dx, dy))
-		elif self.shape == 3:
-			painter.drawPolygon(QtCore.QPoint(dx+size-1, dy), QtCore.QPoint(dx+size-1, dy+size-1), QtCore.QPoint(dx, dy+size-1))
-		elif self.shape == 4:
-			painter.drawPolygon(QtCore.QPoint(dx+size-1, dy+size-1), QtCore.QPoint(dx, dy+size-1), QtCore.QPoint(dx, dy))
+		# if self.shape == 0:
+		painter.drawRect(dx, dy, size, size)
+		# elif self.shape == 1:
+		# 	painter.drawPolygon(QtCore.QPoint(dx, dy), QtCore.QPoint(dx+size-1, dy), QtCore.QPoint(dx, dy+size-1))
+		# elif self.shape == 2:
+		# 	painter.drawPolygon(QtCore.QPoint(dx+size-1, dy), QtCore.QPoint(dx+size-1, dy+size-1), QtCore.QPoint(dx, dy))
+		# elif self.shape == 3:
+		# 	painter.drawPolygon(QtCore.QPoint(dx+size-1, dy), QtCore.QPoint(dx+size-1, dy+size-1), QtCore.QPoint(dx, dy+size-1))
+		# elif self.shape == 4:
+		# 	painter.drawPolygon(QtCore.QPoint(dx+size-1, dy+size-1), QtCore.QPoint(dx, dy+size-1), QtCore.QPoint(dx, dy))
 		painter.setPen(self.wallPen)
+
+		
 		if self.walls[0]:
 			painter.drawLine(dx,		dy,			dx+size-1,	dy)
 		if self.walls[1]:
@@ -172,11 +196,24 @@ class Tile(SneakObj):
 			painter.drawLine(dx+size-1,	dy+size-1,	dx,			dy+size-1)
 		if self.walls[3]:
 			painter.drawLine(dx,		dy+size-1,	dx,			dy)
-		if show_diag_walls:
-			painter.setPen(self.clearPen)
-			self.drawDiagnalWalls(painter,dx,dy,size, show_diag_walls)
-		painter.setPen(self.diagWallPen)
-		self.drawDiagnalWalls(painter,dx,dy,size, False)
+
+		painter.setPen(self.doorPen)
+
+		if self.walls[4]:
+			painter.drawLine(dx,		dy,			dx+size-1,	dy)
+		if self.walls[5]:
+			painter.drawLine(dx+size-1,	dy,			dx+size-1,	dy+size-1)
+		if self.walls[6]:
+			painter.drawLine(dx+size-1,	dy+size-1,	dx,			dy+size-1)
+		if self.walls[7]:
+			painter.drawLine(dx,		dy+size-1,	dx,			dy)
+
+		# # if show_diag_walls:
+		# # 	painter.setPen(self.clearPen)
+		# # 	self.drawDiagnalWalls(painter,dx,dy,size, show_diag_walls)
+		# painter.setPen(self.diagWallPen)
+
+		# #self.drawDiagnalWalls(painter,dx,dy,size, False)
 
 class SneakstersLevel:
 	#send_nudes = [[200.0, 240.0], [160.0, 240.0], [120.0, 240.0], [120.0, 280.0], [120.0, 320.0], [160.0, 320.0], [200.0, 320.0], [200.0, 360.0], [200.0, 400.0], [160.0, 400.0], [120.0, 400.0], [280.0, 240.0], [280.0, 280.0], [280.0, 320.0], [280.0, 360.0], [280.0, 400.0], [320.0, 400.0], [360.0, 400.0], [320.0, 320.0], [360.0, 320.0], [320.0, 240.0], [360.0, 240.0], [440.0, 240.0], [440.0, 280.0], [440.0, 320.0], [440.0, 360.0], [440.0, 400.0], [480.0, 280.0], [520.0, 320.0], [560.0, 360.0], [560.0, 400.0], [560.0, 320.0], [560.0, 280.0], [560.0, 240.0], [640.0, 240.0], [640.0, 280.0], [640.0, 320.0], [640.0, 360.0], [640.0, 400.0], [680.0, 240.0], [720.0, 280.0], [720.0, 320.0], [720.0, 360.0], [680.0, 400.0], [80.0, 480.0], [80.0, 520.0], [80.0, 560.0], [80.0, 600.0], [80.0, 640.0], [120.0, 520.0], [160.0, 560.0], [200.0, 480.0], [200.0, 520.0], [200.0, 560.0], [200.0, 600.0], [200.0, 640.0], [280.0, 480.0], [280.0, 520.0], [280.0, 560.0], [280.0, 600.0], [280.0, 640.0], [320.0, 640.0], [360.0, 640.0], [360.0, 600.0], [360.0, 560.0], [360.0, 520.0], [360.0, 480.0], [440.0, 480.0], [440.0, 520.0], [440.0, 560.0], [440.0, 600.0], [440.0, 640.0], [480.0, 480.0], [520.0, 520.0], [520.0, 560.0], [520.0, 600.0], [480.0, 640.0], [600.0, 480.0], [600.0, 520.0], [600.0, 560.0], [600.0, 600.0], [600.0, 640.0], [640.0, 640.0], [680.0, 640.0], [640.0, 560.0], [680.0, 560.0], [680.0, 480.0], [640.0, 480.0], [840.0, 480.0], [800.0, 480.0], [760.0, 480.0], [760.0, 520.0], [760.0, 560.0], [800.0, 560.0], [840.0, 560.0], [840.0, 600.0], [840.0, 640.0], [800.0, 640.0], [760.0, 640.0]]
@@ -253,26 +290,26 @@ class SneakstersLevel:
 		tileBottom = self.TileAt(tile.x, tile.y+1)
 		tileLeft = self.TileAt(tile.x-1, tile.y)
 		
-		if tileTop:
-			if \
-				tileTop.shape == 1 or\
-				tileTop.shape == 2:
-				tileTop = None
-		if tileRight:
-			if \
-				tileRight.shape == 2 or\
-				tileRight.shape == 3:
-				tileRight = None
-		if tileBottom:
-			if \
-				tileBottom.shape == 3 or\
-				tileBottom.shape == 4:
-				tileBottom = None
-		if tileLeft:
-			if \
-				tileLeft.shape == 4 or\
-				tileLeft.shape == 1:
-				tileLeft = None
+		# if tileTop:
+		# 	if \
+		# 		tileTop.shape == 1 or\
+		# 		tileTop.shape == 2:
+		# 		tileTop = None
+		# if tileRight:
+		# 	if \
+		# 		tileRight.shape == 2 or\
+		# 		tileRight.shape == 3:
+		# 		tileRight = None
+		# if tileBottom:
+		# 	if \
+		# 		tileBottom.shape == 3 or\
+		# 		tileBottom.shape == 4:
+		# 		tileBottom = None
+		# if tileLeft:
+		# 	if \
+		# 		tileLeft.shape == 4 or\
+		# 		tileLeft.shape == 1:
+		# 		tileLeft = None
 				
 
 		if removing:
@@ -309,21 +346,27 @@ class SneakstersLevel:
 		else:
 			tile.walls[3] = True
 
-		if tile.shape == 1:
-			tile.walls[1] = False
-			tile.walls[2] = False
+		# doors should always overwrite walls
+		if tile.walls[4]: tile.walls[0] = False
+		if tile.walls[5]: tile.walls[1] = False
+		if tile.walls[6]: tile.walls[2] = False
+		if tile.walls[7]: tile.walls[3] = False
+			
+		# if tile.shape == 1:
+		# 	tile.walls[1] = False
+		# 	tile.walls[2] = False
 
-		elif tile.shape == 2:
-			tile.walls[2] = False
-			tile.walls[3] = False
+		# elif tile.shape == 2:
+		# 	tile.walls[2] = False
+		# 	tile.walls[3] = False
 
-		elif tile.shape == 3:
-			tile.walls[0] = False
-			tile.walls[3] = False
+		# elif tile.shape == 3:
+		# 	tile.walls[0] = False
+		# 	tile.walls[3] = False
 
-		elif tile.shape == 4:
-			tile.walls[0] = False
-			tile.walls[1] = False
+		# elif tile.shape == 4:
+		# 	tile.walls[0] = False
+		# 	tile.walls[1] = False
 
 
 	def draw(self, painter, size, show_diag_walls = False):
@@ -426,6 +469,8 @@ class SneakstersLevel:
 			singleGuardHeaderData = singleGuardHeaderUnpacker.unpack(data[guardHeader.size + singleGuardHeaderUnpacker.size * gi: guardHeader.size + singleGuardHeaderUnpacker.size +  singleGuardHeaderUnpacker.size * gi])
 			guard = Guard(singleGuardHeaderData[0], singleGuardHeaderData[1])
 			guard.unpackNodeData(data, singleGuardHeaderData[2], singleGuardHeaderData[3])
+
+			print(singleGuardHeaderData[3])
 			self.guards.append(guard)
 
 	def PackTileData(self):
@@ -544,4 +589,4 @@ icons_path = os.path.dirname(__file__) + "/icons/"
 # else:
 # 	icons_path += "/icons/"
 
-print(icons_path + " PLOOPA LOOPA")
+#print(icons_path + " PLOOPA LOOPA")

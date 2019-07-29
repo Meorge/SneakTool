@@ -30,7 +30,7 @@ global obj_mode
 Object modes
 0 = room
 1 = wall
-2 = diag wall
+2 = door
 3 = Actor
 """
 
@@ -131,28 +131,23 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_ObjType_Room = QtWidgets.QPushButton("Room")
 		self.toolPaletteWidget_ObjType_FloorShape = QtWidgets.QPushButton("Floor Shape")
 		self.toolPaletteWidget_ObjType_Wall = QtWidgets.QPushButton("Wall")
-		self.toolPaletteWidget_ObjType_Diag = QtWidgets.QPushButton("Diagonal Wall")
 		self.toolPaletteWidget_ObjType_Door = QtWidgets.QPushButton("Door")
 		self.toolPaletteWidget_ObjType_Spr = QtWidgets.QPushButton("Actor")
 		
 		self.toolPaletteWidget_ObjType_Room.clicked.connect(self.SetRoomMode)
 		self.toolPaletteWidget_ObjType_FloorShape.clicked.connect(self.SetRoomShapeMode)
 		self.toolPaletteWidget_ObjType_Wall.clicked.connect(self.EnableWallMode)
-		self.toolPaletteWidget_ObjType_Diag.clicked.connect(self.EnableDiagnalWallMode)
-		self.toolPaletteWidget_ObjType_Door.clicked.connect(self.SetDoorMode)
+		self.toolPaletteWidget_ObjType_Door.clicked.connect(self.EnableDoorMode)
 		self.toolPaletteWidget_ObjType_Spr.clicked.connect(self.SetActorMode)
 		
 		self.toolPaletteWidget_ObjType_Room.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Room.setAutoExclusive(True)
 		
-		self.toolPaletteWidget_ObjType_FloorShape.setCheckable(True)
-		self.toolPaletteWidget_ObjType_FloorShape.setAutoExclusive(True)
+		# self.toolPaletteWidget_ObjType_FloorShape.setCheckable(True)
+		# self.toolPaletteWidget_ObjType_FloorShape.setAutoExclusive(True)
 
 		self.toolPaletteWidget_ObjType_Wall.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Wall.setAutoExclusive(True)
-
-		self.toolPaletteWidget_ObjType_Diag.setCheckable(True)
-		self.toolPaletteWidget_ObjType_Diag.setAutoExclusive(True)
 
 		self.toolPaletteWidget_ObjType_Door.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Door.setAutoExclusive(True)
@@ -162,9 +157,8 @@ class Window(QtWidgets.QMainWindow):
 
 		self.toolPaletteWidget_ObjTypeLayout = QtWidgets.QVBoxLayout()
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Room)
-		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_FloorShape)
+		# self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_FloorShape)
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Wall)
-		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Diag)
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Door)
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Spr)
 
@@ -377,12 +371,12 @@ class Window(QtWidgets.QMainWindow):
 		print("WALL MODE")
 		print(obj_mode)
 
-	def EnableDiagnalWallMode(self):
+	def EnableDoorMode(self):
 		global obj_mode
 		obj_mode = 2
 
 		self.gridScene.update()
-		print("DIAGNAL WALL MODE")
+		print("DOOR MODE")
 		print(obj_mode)
 		
 	def zoomIn(self):
@@ -419,11 +413,6 @@ class Window(QtWidgets.QMainWindow):
 		global obj_mode
 		obj_mode = 0
 
-		self.gridScene.update()
-
-	def SetDoorMode(self):
-		global obj_mode
-		obj_mode = 1
 		self.gridScene.update()
 
 	def SetActorMode(self):
@@ -670,7 +659,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 				if tile:
 					current_level.tiles.remove(tile)
 					current_level.AutoWall(tile, True)
-		elif obj_mode == 1:
+		elif obj_mode == 1: ### WALL
 			tile = current_level.TileAt(*array)
 			if tile:
 				if tile_x_pos < 0.25:
@@ -693,16 +682,50 @@ class GridScene(QtWidgets.QGraphicsScene):
 					tile.walls[2] = not tile.walls[2]
 					if sideTile:
 						sideTile.walls[0] = tile.walls[2]
-		elif obj_mode == 2:
+
+		elif obj_mode == 2: ### DOOR
 			tile = current_level.TileAt(*array)
 			if tile:
-				if tile.walls[4]:
-				   tile.walls[4] = False
-				   tile.walls[5] = True
-				elif tile.walls[5]:
-				   tile.walls[5] = False
-				else:
-				   tile.walls[4] = True
+				if tile_x_pos < 0.25: # left door
+					sideTile = current_level.TileAt(tile.x-1, tile.y)
+					tile.walls[7] = not tile.walls[7]
+					tile.walls[3] = False
+
+					if sideTile:
+						sideTile.walls[1] = False
+						sideTile.walls[5] = False
+
+				elif tile_x_pos >= 0.75: # right door
+					sideTile = current_level.TileAt(tile.x+1, tile.y)
+					tile.walls[5] = not tile.walls[5]
+					tile.walls[1] = False
+
+					if sideTile:
+						sideTile.walls[3] = False
+						sideTile.walls[7] = False
+
+				elif tile_y_pos < 0.25: # top door
+					sideTile = current_level.TileAt(tile.x, tile.y-1)
+					tile.walls[4] = not tile.walls[4]
+					tile.walls[0] = False
+
+					if sideTile:
+						sideTile.walls[2] = False
+						sideTile.walls[6] = False
+
+				elif tile_y_pos >= 0.75:
+					sideTile = current_level.TileAt(tile.x, tile.y+1)
+					tile.walls[6] = not tile.walls[6]
+					tile.walls[2] = False
+
+					if sideTile:
+						sideTile.walls[0] = False
+						sideTile.walls[4] = False
+
+
+
+
+
 		elif obj_mode == 3:
 			if obj_selected == 0: ### GEMSTONE SELECTED
 				gem = current_level.GemstoneAt(*array)
@@ -721,8 +744,6 @@ class GridScene(QtWidgets.QGraphicsScene):
 						current_level.gemstones.remove(gem)
 						#self.removeItem(gem.graphicsItem)
 
-				print(current_level.gemstones)
-
 			elif obj_selected == 1: ### GUARD SELECTED
 				guard = current_level.GuardAt(*array)
 				if draw_mode == 0:
@@ -733,8 +754,6 @@ class GridScene(QtWidgets.QGraphicsScene):
 				elif draw_mode == 1:
 					if guard:
 						current_level.guards.remove(guard)
-
-				print(current_level.guards)
 				#self.parent.UpdateNodeList()
 
 			elif obj_selected == 2: ### GEM SACK
