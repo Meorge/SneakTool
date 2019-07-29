@@ -71,6 +71,8 @@ class Window(QtWidgets.QMainWindow):
 		
 		self.setCentralWidget(self.gridView)
 
+		self.gridView.centerOn(QtCore.QPointF(current_level.thiefSpawnPoint.x * sneaklib.size, current_level.thiefSpawnPoint.y * sneaklib.size))
+
 
 		#self.resize(500,500)
 
@@ -335,6 +337,7 @@ class Window(QtWidgets.QMainWindow):
 		current_level.UnpackLevelData(file.read())
 		file.close()
 
+		self.gridView.centerOn(QtCore.QPoint(current_level.thiefSpawnPoint.x, current_level.thiefSpawnPoint.y))
 		self.UpdateActorList()
 		self.gridScene.update(self.gridScene.sceneRect())
 
