@@ -662,7 +662,6 @@ class SneakstersLevel:
 	def PackBeaconData(self):
 		headerPacker = struct.Struct('4s I')
 		header = (b"BEAC", len(self.beacons))
-		print("Packing header {}".format(header))
 		packed = headerPacker.pack(*header)
 
 		for beacon in self.beacons:
@@ -670,25 +669,22 @@ class SneakstersLevel:
 			beaconData = (int(beacon.x), int(beacon.y), int(beacon.radius))
 			packed += beaconPacker.pack(*beaconData)
 
-		print("All packed is {}".format(packed))
 
 		return packed
 
 	def UnpackBeaconData(self, data):
 		headerUnpacker = struct.Struct('4sI')
 
-		sackHeader = []
-		sackHeader = headerUnpacker.unpack(data[:8])
+		beaconHeader = []
+		beaconHeader = headerUnpacker.unpack(data[:8])
 
-		numberOfSacks = sackHeader[1]
+		numberOfBeacons = beaconHeader[1]
 
-		print(sackHeader)
-
-		for i in range(numberOfSacks):
-			sackUnpacker = struct.Struct('HHH')
-			unpacked = sackUnpacker.unpack_from(data, (8 + sackUnpacker.size * i))
-			sack = VisibilityBeacon(unpacked[0], unpacked[1], unpacked[2])
-			self.beacons.append(sack)
+		for i in range(numberOfBeacons):
+			beaconUnpacker = struct.Struct('HHH')
+			unpacked = beaconUnpacker.unpack_from(data, (8 + beaconUnpacker.size * i))
+			beac = VisibilityBeacon(unpacked[0], unpacked[1], unpacked[2])
+			self.beacons.append(beac)
 
 	# def UnpackBeaconData(self, data):
 	# 	headerUnpacker = struct.Struct('4sI')
