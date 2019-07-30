@@ -513,15 +513,14 @@ class SneakstersLevel:
 		SpawnPointData = self.PackSpawnPointData()
 
 		packed += SpawnPointData
+		
 
+		headerToPack = (b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData), GuardArrayOffset, len(GuardArrayData), GemSackArrayOffset, len(GemSackArrayData), int(BeaconArrayOffset), int(len(BeaconArrayData)), SpawnPointArrayOffset)
 
-
-		headerToPack = (b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData), GuardArrayOffset, len(GuardArrayData), GemSackArrayOffset, len(GemSackArrayData), BeaconArrayOffset, len(BeaconArrayData), SpawnPointArrayOffset)
-
-		aaa = headerPacker.pack(*headerToPack)
+		fileData = headerPacker.pack(*headerToPack)
 		print(headerToPack)
-		aaa += packed
-		return aaa
+		fileData += packed
+		return fileData
 		
 
 		
@@ -530,6 +529,25 @@ class SneakstersLevel:
 		headerUnpacker = struct.Struct('4s II II II II II I')
 		print(data[:headerUnpacker.size])
 		header = headerUnpacker.unpack(data[:headerUnpacker.size])
+
+
+		tileArrayOffset = header[1]
+		tileArrayLength = header[2]
+
+		gemstoneArrayOffset = header[3]
+		gemstoneArrayLength = header[4]
+
+		guardArrayOffset = header[5]
+		guardArrayLength = header[6]
+
+		gemSackArrayOffset = header[7]
+		gemSackArrayLength = header[8]
+
+		beaconArrayOffset = header[9]
+		beaconArrayLength = header[10]
+
+		spawnPtOffset = header[11]
+
 		self.UnpackTileData(data[header[1]:header[1]+header[2]])
 		self.UnpackGemstoneData(data[header[3]:header[3]+header[4]])
 		self.UnpackGuardData(data[header[5]:header[5]+header[6]])
