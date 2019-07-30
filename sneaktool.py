@@ -1,6 +1,7 @@
 import os
 import sys
 import sneaklib
+import traceback
 
 from PyQt5 import QtCore, QtGui, QtWidgets#, QtMacExtras
 Qt = QtCore.Qt
@@ -187,7 +188,7 @@ class Window(QtWidgets.QMainWindow):
 		self.actorPaletteWidget.addItem("Gemstone")
 		self.actorPaletteWidget.addItem("Guard")
 		self.actorPaletteWidget.addItem("Gem Sack")
-		self.actorPaletteWidget.addItem("Trash Can")
+		self.actorPaletteWidget.addItem("Visibility Beacon")
 
 
 		### ACTOR INFO
@@ -199,6 +200,11 @@ class Window(QtWidgets.QMainWindow):
 		self.actorInfo_actorIconLabel.setFixedSize(40,40)
 		self.actorInfo_actorName = QtWidgets.QLabel("Guard")
 		self.actorInfo_actorPos = QtWidgets.QLabel("(300, 300)")
+
+		self.actorInfo_RadiusEntry = QtWidgets.QSpinBox()
+		self.actorInfo_RadiusEntry.setRange(0, 100)
+		self.actorInfo_RadiusEntry.valueChanged.connect(self.updateRadValue)
+		self.actorInfo_RadiusEntry.hide()
 
 		self.actorInfo_labelsLayout = QtWidgets.QVBoxLayout()
 		self.actorInfo_labelsLayout.addWidget(self.actorInfo_actorName)
@@ -222,6 +228,7 @@ class Window(QtWidgets.QMainWindow):
 		self.actorInfo_nodeLayout.addWidget(self.actorInfo_removeNodeButton)
 		
 		self.actorInfo_layout.addLayout(self.actorInfo_headerLayout, 100)
+		self.actorInfo_layout.addWidget(self.actorInfo_RadiusEntry)
 		self.actorInfo_layout.addWidget(self.actorInfo_nodeList)
 		self.actorInfo_layout.addLayout(self.actorInfo_nodeLayout)
 		self.actorInfo.setLayout(self.actorInfo_layout)
@@ -254,9 +261,13 @@ class Window(QtWidgets.QMainWindow):
 		self.currentActorsWidget_GemSacks = QtWidgets.QTreeWidgetItem()
 		self.currentActorsWidget_GemSacks.setText(0, "Gem Sacks")
 
+		self.currentActorsWidget_Beacons = QtWidgets.QTreeWidgetItem()
+		self.currentActorsWidget_Beacons.setText(0, "Visibility Beacons")
+
 
 		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_Grds)
 		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_GemSacks)
+		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_Beacons)
 
 
 		### BOTTOM BAR
@@ -337,8 +348,15 @@ class Window(QtWidgets.QMainWindow):
 
 		current_level = sneaklib.SneakstersLevel()
 
-		current_level.UnpackLevelData(file.read())
-		file.close()
+		try:
+			data = file.read()
+			file.close()
+			current_level.UnpackLevelData(data)
+		except Exception as ex:
+			traceback.print_exc()
+			return
+
+		
 
 		# self.gridView.centerOn(QtCore.QPoint(current_level.thiefSpawnPoint.x, current_level.thiefSpawnPoint.y))
 		self.centerView()
@@ -482,7 +500,19 @@ class Window(QtWidgets.QMainWindow):
 		
 		self.currentActorsWidget_GemSacks.setText(0, "Gem Sacks (" + str(len(current_level.gemSacks)) + ")")
 
+	def UpdateBeaconList(self):
+		for i in reversed(range(self.currentActorsWidget_Beacons.childCount())):
+			self.currentActorsWidget_Beacons.removeChild(self.currentActorsWidget_Beacons.child(i))
+
+		for g in current_level.beacons:
+			newItem = QtWidgets.QTreeWidgetItem()
+			newItem.setText(0, "(" + str(g.x) + ", " + str(g.y) + ")")
+			self.currentActorsWidget_Beacons.addChild(newItem)
+		
+		self.currentActorsWidget_Beacons.setText(0, "Visibility Beacons (" + str(len(current_level.beacons)) + ")")
+
 	def UpdateSelection(self):
+		self.actorInfo_RadiusEntry.hide()
 		if len(current_level.selectedActors) == 1:
 			currentSelected = current_level.selectedActors[0]
 			self.actorInfo_actorPos.setText("(" + str(int(currentSelected.x)) + ", " + str(int(currentSelected.y)) + ")")
@@ -517,6 +547,18 @@ class Window(QtWidgets.QMainWindow):
 				self.actorInfo_addNodeButton.setEnabled(False)
 				self.actorInfo_removeNodeButton.setEnabled(False)
 
+			elif type(currentSelected) is sneaklib.VisibilityBeacon:
+				self.actorInfo_actorName.setText("Visibility Beacon")
+				gemsackIco = QtGui.QPixmap(icons_path + "official_sneaksters/beacon_ico.png")
+				self.actorInfo_actorIconLabel.setPixmap(gemsackIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
+
+				self.actorInfo_RadiusEntry.show()
+			
+				
+
+				self.actorInfo_addNodeButton.setEnabled(False)
+				self.actorInfo_removeNodeButton.setEnabled(False)
+
 		elif len(current_level.selectedActors) > 1:
 			self.actorInfo_actorName.setText("Multiple actors selected")
 			self.actorInfo_actorPos.setText("")
@@ -530,6 +572,15 @@ class Window(QtWidgets.QMainWindow):
 			self.actorInfo_actorIconLabel.clear()
 			self.actorInfo_addNodeButton.setEnabled(False)
 			self.actorInfo_removeNodeButton.setEnabled(False)
+
+	def updateRadValue(self, val):
+		if len(current_level.selectedActors) == 0: return
+		if type(current_level.selectedActors[0]) is sneaklib.VisibilityBeacon:
+			current_level.selectedActors[0].radius = val
+
+		self.gridScene.update()
+
+		
 
 
 	def AddNodeToGuard(self):
@@ -658,6 +709,9 @@ class GridScene(QtWidgets.QGraphicsScene):
 				if obj not in current_level.selectedActors: current_level.selectedActors.append(obj)
 				else: current_level.selectedActors.remove(obj)
 
+				if len(current_level.selectedActors) == 1 and type(current_level.selectedActors[0]) is sneaklib.VisibilityBeacon:
+					self.parent.actorInfo_RadiusEntry.setValue(obj.radius)
+
 			self.parent.UpdateNodeList()
 		elif obj_mode == 0:
 			if draw_mode == 0:
@@ -778,8 +832,25 @@ class GridScene(QtWidgets.QGraphicsScene):
 					if gemSack:
 						current_level.gemSacks.remove(gemSack)
 
-				self.parent.UpdateGemSackList()
+			elif obj_selected == 3: ### BEACON
+				beacon = current_level.BeaconAt(*array)
+				if draw_mode == 0:
+					if not beacon:
+						beacon = sneaklib.VisibilityBeacon(*array)
+						current_level.beacons.append(beacon)
+						current_level.selectedActors = [beacon]
+
+
+				elif draw_mode == 1:
+					if beacon:
+						current_level.beacons.remove(beacon)
+
+				
+
+				
 			self.parent.UpdateNodeList()
+			self.parent.UpdateGemSackList()
+			self.parent.UpdateBeaconList()
 						
 
 		elif obj_mode == 4:
@@ -811,6 +882,8 @@ class GridScene(QtWidgets.QGraphicsScene):
 		self.parent.UpdateGuardList()
 		self.parent.UpdateNodeList()
 		self.parent.UpdateGemSackList()
+		self.parent.UpdateBeaconList()
+
 		fixedX = event.scenePos().x()
 		fixedY = event.scenePos().y()
 		tileX = fixedX // CELL_SIZE
