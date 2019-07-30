@@ -515,7 +515,14 @@ class SneakstersLevel:
 		packed += SpawnPointData
 		
 
-		headerToPack = (b'LEVL', TileArrayOffset, len(TileArrayData), GemstoneArrayOffset, len(GemstoneArrayData), GuardArrayOffset, len(GuardArrayData), GemSackArrayOffset, len(GemSackArrayData), int(BeaconArrayOffset), int(len(BeaconArrayData)), SpawnPointArrayOffset)
+
+		headerToPack = (b'LEVL', 
+			TileArrayOffset, len(TileArrayData), 
+			GemstoneArrayOffset, len(GemstoneArrayData), 
+			GuardArrayOffset, len(GuardArrayData), 
+			GemSackArrayOffset, len(GemSackArrayData), 
+			BeaconArrayOffset, len(BeaconArrayData), 
+			SpawnPointArrayOffset)
 
 		fileData = headerPacker.pack(*headerToPack)
 		print(headerToPack)
