@@ -245,7 +245,59 @@ class Tile(SneakObj):
 		# painter.setPen(self.diagWallPen)
 
 		# #self.drawDiagnalWalls(painter,dx,dy,size, False)
+class SpecialTile(SneakObj):
+	squareBrush = QtGui.QBrush(QtGui.QColor(170,0,170))
+	wallPen = QtGui.QPen(QtGui.QColor(240,0,0), 4)
+	clearPen = QtGui.QPen(QtGui.QColor(0,0,0,48))
+	SpecialTileShapes_path = os.path.dirname(__file__) + "/SpecialTileShapes.bin"
+	f = open(SpecialTileShapes_path, 'rb');
+	shapeData = f.read();
+	f.close()
+	
+	shapes = []
+	shapeSeeker = 8
+	numShapes = struct.unpack('I', shapeData[4:8])[0]
+	for i in range(numShapes):
+		numPoints = struct.unpack('I', shapeData[shapeSeeker+4:shapeSeeker+8])[0]
+		shapeBytes = shapeData[shapeSeeker:shapeSeeker+numPoints*8+8]
+		shape = []
+		print(numPoints)
+		for j in range(numPoints):
+			print(shapeBytes[8+j*8:16+j*8])
+			shape.append(struct.unpack('2f', shapeBytes[8+j*8:16+j*8]))
+		shapeSeeker += len(shapeBytes)
+		
+		shapes.append(shape)
+	def __init__(self, x, y, flags = 0, shapeType = 0):
+		super(SpecialTile, self).__init__(x, y)
+		
+		"""
+		Depending on the complexity of the shape, you can go up to 16 walls.
+		"""
+		
+		self.walls = []
+		for i in range(16):
+			self.walls.append(((flags>>i) & 1) != 0)
+		self.shapeType = shapeType;
 
+	def flags(self):
+		flag = 0
+		for i in range(len(self.walls)):
+			flag |= self.walls[i] << i
+		return flag
+	def getSize(self):
+		return (1,1)
+	def draw(self, painter, size, show_diag_walls = False):
+		painter.setBrush(self.squareBrush)
+		painter.setPen(self.clearPen)
+		dx = self.x*size
+		dy = self.y*size
+		shape_to_draw = QtGui.QPolygonF();
+		if self.shapeType >= len(self.shapes):
+			return
+		for point in self.shapes[self.shapeType]:
+			shape_to_draw.append(QtCore.QPointF(point[0]*size+dx, point[1]*size+dy))
+		painter.drawPolygon(shape_to_draw)
 class SneakstersLevel:
 	#send_nudes = [[200.0, 240.0], [160.0, 240.0], [120.0, 240.0], [120.0, 280.0], [120.0, 320.0], [160.0, 320.0], [200.0, 320.0], [200.0, 360.0], [200.0, 400.0], [160.0, 400.0], [120.0, 400.0], [280.0, 240.0], [280.0, 280.0], [280.0, 320.0], [280.0, 360.0], [280.0, 400.0], [320.0, 400.0], [360.0, 400.0], [320.0, 320.0], [360.0, 320.0], [320.0, 240.0], [360.0, 240.0], [440.0, 240.0], [440.0, 280.0], [440.0, 320.0], [440.0, 360.0], [440.0, 400.0], [480.0, 280.0], [520.0, 320.0], [560.0, 360.0], [560.0, 400.0], [560.0, 320.0], [560.0, 280.0], [560.0, 240.0], [640.0, 240.0], [640.0, 280.0], [640.0, 320.0], [640.0, 360.0], [640.0, 400.0], [680.0, 240.0], [720.0, 280.0], [720.0, 320.0], [720.0, 360.0], [680.0, 400.0], [80.0, 480.0], [80.0, 520.0], [80.0, 560.0], [80.0, 600.0], [80.0, 640.0], [120.0, 520.0], [160.0, 560.0], [200.0, 480.0], [200.0, 520.0], [200.0, 560.0], [200.0, 600.0], [200.0, 640.0], [280.0, 480.0], [280.0, 520.0], [280.0, 560.0], [280.0, 600.0], [280.0, 640.0], [320.0, 640.0], [360.0, 640.0], [360.0, 600.0], [360.0, 560.0], [360.0, 520.0], [360.0, 480.0], [440.0, 480.0], [440.0, 520.0], [440.0, 560.0], [440.0, 600.0], [440.0, 640.0], [480.0, 480.0], [520.0, 520.0], [520.0, 560.0], [520.0, 600.0], [480.0, 640.0], [600.0, 480.0], [600.0, 520.0], [600.0, 560.0], [600.0, 600.0], [600.0, 640.0], [640.0, 640.0], [680.0, 640.0], [640.0, 560.0], [680.0, 560.0], [680.0, 480.0], [640.0, 480.0], [840.0, 480.0], [800.0, 480.0], [760.0, 480.0], [760.0, 520.0], [760.0, 560.0], [800.0, 560.0], [840.0, 560.0], [840.0, 600.0], [840.0, 640.0], [800.0, 640.0], [760.0, 640.0]]
 	
@@ -253,6 +305,7 @@ class SneakstersLevel:
 		super().__init__()
 
 		self.tiles = []
+		self.specialTiles = []
 		self.gemstones = []
 		self.guards = []
 		self.gemSacks = []
@@ -272,6 +325,16 @@ class SneakstersLevel:
 		for tile in self.tiles:
 			if tile.x == x and tile.y == y:
 				return tile
+		return None
+		
+	def SpecialTileAt(self, x, y):
+		for tile in self.specialTiles:
+			tsize = tile.getSize()
+			print(tsize)
+			for tx in range(tsize[0]):
+				for ty in range(tsize[1]):
+					if (tile.x + tx) == x and (tile.y + ty) == y:
+						return tile
 		return None
 
 	def ObjectAt(self, x, y):
@@ -425,6 +488,9 @@ class SneakstersLevel:
 	def draw(self, painter, size, show_diag_walls = False):
 		for tile in self.tiles:
 			tile.draw(painter, size, show_diag_walls)
+			
+		for tile in self.specialTiles:
+			tile.draw(painter, size, show_diag_walls)
 
 		for gem in self.gemstones:
 			gem.draw(painter, size, gem in self.selectedActors)
@@ -446,7 +512,7 @@ class SneakstersLevel:
 
 
 	def PackLevelData(self):
-		headerPacker = struct.Struct('4s II II II II II I')
+		headerPacker = struct.Struct('4s II II II II II II I')
 
 		# start the packing buffer
 		packed = b''
@@ -461,6 +527,18 @@ class SneakstersLevel:
 
 		# add the tile data to the packing buffer
 		packed += TileArrayData
+		
+		# some null buffer I think?
+		#  -	For file alignment, yes.
+		while ((len(packed) + headerPacker.size) % 0x10)!=0:
+			packed+=b'\0'
+			
+		# calculate offset for tile section
+		SpecialTileArrayOffset = len(packed) + headerPacker.size
+		SpecialTileArrayData = self.PackSpecialTileData()
+
+		# add the tile data to the packing buffer
+		packed += SpecialTileArrayData
 		
 		# some null buffer I think?
 		#  -	For file alignment, yes.
@@ -518,6 +596,7 @@ class SneakstersLevel:
 
 		headerToPack = (b'LEVL', 
 			TileArrayOffset, len(TileArrayData), 
+			SpecialTileArrayOffset, len(SpecialTileArrayData), 
 			GemstoneArrayOffset, len(GemstoneArrayData), 
 			GuardArrayOffset, len(GuardArrayData), 
 			GemSackArrayOffset, len(GemSackArrayData), 
@@ -533,7 +612,7 @@ class SneakstersLevel:
 		
 	def UnpackLevelData(self, data):
 		
-		headerUnpacker = struct.Struct('4s II II II II II I')
+		headerUnpacker = struct.Struct('4s II II II II II II I')
 		print(data[:headerUnpacker.size])
 		header = headerUnpacker.unpack(data[:headerUnpacker.size])
 
@@ -541,29 +620,33 @@ class SneakstersLevel:
 		tileArrayOffset = header[1]
 		tileArrayLength = header[2]
 
-		gemstoneArrayOffset = header[3]
-		gemstoneArrayLength = header[4]
+		specialTileArrayOffset = header[3]
+		specialTileArrayLength = header[4]
 
-		guardArrayOffset = header[5]
-		guardArrayLength = header[6]
+		gemstoneArrayOffset = header[5]
+		gemstoneArrayLength = header[6]
 
-		gemSackArrayOffset = header[7]
-		gemSackArrayLength = header[8]
+		guardArrayOffset = header[7]
+		guardArrayLength = header[8]
 
-		beaconArrayOffset = header[9]
-		beaconArrayLength = header[10]
+		gemSackArrayOffset = header[9]
+		gemSackArrayLength = header[10]
 
-		spawnPtOffset = header[11]
+		beaconArrayOffset = header[11]
+		beaconArrayLength = header[12]
+
+		spawnPtOffset = header[13]
 
 		self.UnpackTileData(data[header[1]:header[1]+header[2]])
-		self.UnpackGemstoneData(data[header[3]:header[3]+header[4]])
-		self.UnpackGuardData(data[header[5]:header[5]+header[6]])
-		self.UnpackGemSackData(data[header[7]:header[7] + header[8]])
+		self.UnpackSpecialTileData(data[header[3]:header[3]+header[4]])
+		self.UnpackGemstoneData(data[header[5]:header[5]+header[6]])
+		self.UnpackGuardData(data[header[7]:header[7] + header[8]])
+		self.UnpackGemSackData(data[header[9]:header[9]+header[10]])
 		
 		print(header)
-		self.UnpackBeaconData(data[header[9]:header[9] + header[10]])
+		self.UnpackBeaconData(data[header[11]:header[11] + header[12]])
 
-		self.UnpackSpawnPointData(data[header[11]:])
+		self.UnpackSpawnPointData(data[header[13:]])
 
 
 	def PackGuardData(self):
@@ -630,6 +713,40 @@ class SneakstersLevel:
 		#print(header)
 		#print(dataOut)
 
+	def PackSpecialTileData(self):
+		numberOfTiles = len(self.specialTiles)
+		firstPacker = struct.Struct('4sI')
+
+		data = (b"SPTI", numberOfTiles)
+		packed = firstPacker.pack(*data)
+		#print(len(packed))
+
+
+
+		for tile in self.specialTiles:
+			tilePacker = struct.Struct('HHHH')
+			#print(tilePacker.size)
+			tileData = (int(tile.x), int(tile.y), tile.flags(), int(tile.shapeType))
+			packed += tilePacker.pack(*tileData)
+
+		#print(binascii.hexlify(packed))
+		return packed
+
+	def UnpackSpecialTileData(self, data):
+		headerUnpacker = struct.Struct('4sI')
+
+		self.header = []
+		header = headerUnpacker.unpack(data[:8])
+		numberOfTiles = header[1]
+		for i in range(numberOfTiles):
+			tileUnpacker = struct.Struct('HHHH')
+
+			#print(tileUnpacker.size)
+			unpacked = tileUnpacker.unpack_from(data, 8 + (tileUnpacker.size * i))
+			tile = Tile(unpacked[0], unpacked[1], unpacked[2], unpacked[3])
+			self.specialTiles.append(tile)
+		#print(header)
+		#print(dataOut)
 
 	def PackGemstoneData(self):
 		headerPacker = struct.Struct('4sI')

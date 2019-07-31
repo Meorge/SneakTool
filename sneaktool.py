@@ -24,6 +24,8 @@ global draw_mode
 Draw modes
 0 = draw
 1 = erase
+2 = move
+3 = draw special
 """
 
 global obj_mode
@@ -94,6 +96,16 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_DrawButton.setCheckable(True)
 		self.toolPaletteWidget_DrawButton.setAutoExclusive(True)
 		self.toolPaletteWidget_DrawButton.clicked.connect(self.EnableDrawMode)
+
+		self.toolPaletteWidget_DrawSpecialButton = QtWidgets.QPushButton("Draw Special")
+		self.toolPaletteWidget_DrawSpecialButtonIco = QtGui.QIcon(icons_path + "drawSpecial.png")
+		#self.toolPaletteWidget_DrawSpecialButton.align
+		self.toolPaletteWidget_DrawSpecialButton.setIcon(self.toolPaletteWidget_DrawSpecialButtonIco)
+		#self.toolPaletteWidget_DrawSpecialButton.setFlat(True)
+		#self.toolPaletteWidget_DrawSpecialButton.setFixedSize(40,40)
+		self.toolPaletteWidget_DrawSpecialButton.setCheckable(True)
+		self.toolPaletteWidget_DrawSpecialButton.setAutoExclusive(True)
+		self.toolPaletteWidget_DrawSpecialButton.clicked.connect(self.EnableDrawSpecialMode)
 		
 
 		
@@ -119,6 +131,7 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_MoveButton)
 		self.toolPaletteWidget_Layout.addSpacing(5)
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_DrawButton)
+		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_DrawSpecialButton)
 		self.toolPaletteWidget_Layout.addWidget(self.toolPaletteWidget_EraseButton)
 		self.toolPaletteWidget_Layout.addSpacing(5)
 		self.toolPaletteWidget_Layout.setAlignment(Qt.AlignTop)
@@ -391,6 +404,13 @@ class Window(QtWidgets.QMainWindow):
 
 		self.gridScene.update()
 		print("DRAW MODE")
+	
+	def EnableDrawSpecialMode(self):
+		global draw_mode
+		draw_mode = 3
+
+		self.gridScene.update()
+		print("DRAW SPECIAL MODE")
 
 
 	def EnableWallMode(self):
@@ -720,11 +740,19 @@ class GridScene(QtWidgets.QGraphicsScene):
 					tile = sneaklib.Tile(*array)
 					current_level.tiles.append(tile)
 					current_level.AutoWall(tile)
+			elif draw_mode == 3:
+				tile = current_level.SpecialTileAt(*array)
+				if not tile:
+					tile = sneaklib.SpecialTile(*array)
+					current_level.specialTiles.append(tile)
 			elif draw_mode == 1:
 				tile = current_level.TileAt(*array)
 				if tile:
 					current_level.tiles.remove(tile)
 					current_level.AutoWall(tile, True)
+				tile = current_level.SpecialTileAt(*array)
+				if tile:
+					current_level.specialTiles.remove(tile)
 		elif obj_mode == 1: ### WALL
 			tile = current_level.TileAt(*array)
 			if tile:
