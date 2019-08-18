@@ -257,6 +257,7 @@ class SpecialTile(SneakObj):
 	shapes = []
 	shapeSeeker = 8
 	numShapes = struct.unpack('I', shapeData[4:8])[0]
+
 	for i in range(numShapes):
 		numPoints = struct.unpack('I', shapeData[shapeSeeker+4:shapeSeeker+8])[0]
 		shapeBytes = shapeData[shapeSeeker:shapeSeeker+numPoints*8+8]
@@ -285,8 +286,10 @@ class SpecialTile(SneakObj):
 		for i in range(len(self.walls)):
 			flag |= self.walls[i] << i
 		return flag
+
 	def getSize(self):
 		return (1,1)
+		
 	def draw(self, painter, size, show_diag_walls = False):
 		painter.setBrush(self.squareBrush)
 		painter.setPen(self.clearPen)
