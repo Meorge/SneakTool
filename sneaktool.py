@@ -44,6 +44,14 @@ Actors to select
 1 = guard
 """
 
+
+obj_list = (
+	sneaklib.Gemstone,
+	sneaklib.Guard,
+	sneaklib.GemSack,
+	sneaklib.VisibilityBeacon
+)
+
 class Window(QtWidgets.QMainWindow):
 	"""Main Window"""
 
@@ -491,45 +499,57 @@ class Window(QtWidgets.QMainWindow):
 		for i in reversed(range(self.currentActorsWidget_Gems.childCount())):
 			self.currentActorsWidget_Gems.removeChild(self.currentActorsWidget_Gems.child(i))
 
-		for g in current_level.gemstones:
+		noGems = 0
+		for g in current_level.actors:
+			if type(g) != sneaklib.Gemstone: continue
 			newItem = QtWidgets.QTreeWidgetItem()
 			newItem.setText(0, "(" + str(g.x) + ", " + str(g.y) + ")")
 			self.currentActorsWidget_Gems.addChild(newItem)
+			noGems += 1
 		
-		self.currentActorsWidget_Gems.setText(0, "Gemstones (" + str(len(current_level.gemstones)) + ")")
+		self.currentActorsWidget_Gems.setText(0, "Gemstones ({})".format(noGems))
 
 	def UpdateGuardList(self):
 		for i in reversed(range(self.currentActorsWidget_Grds.childCount())):
 			self.currentActorsWidget_Grds.removeChild(self.currentActorsWidget_Grds.child(i))
 
-		for g in current_level.guards:
+		noGuards = 0
+		for g in current_level.actors:
+			if type(g) != sneaklib.Guard: continue
 			newItem = QtWidgets.QTreeWidgetItem()
 			newItem.setText(0, "(" + str(g.x) + ", " + str(g.y) + ")")
 			self.currentActorsWidget_Grds.addChild(newItem)
+			noGuards += 1
 		
-		self.currentActorsWidget_Grds.setText(0, "Guards (" + str(len(current_level.guards)) + ")")
+		self.currentActorsWidget_Grds.setText(0, "Guards ({})".format(noGuards))
 
 	def UpdateGemSackList(self):
 		for i in reversed(range(self.currentActorsWidget_GemSacks.childCount())):
 			self.currentActorsWidget_GemSacks.removeChild(self.currentActorsWidget_GemSacks.child(i))
 
-		for g in current_level.gemSacks:
+		noSacks = 0
+		for g in current_level.actors:
+			if type(g) != sneaklib.GemSack: continue
 			newItem = QtWidgets.QTreeWidgetItem()
 			newItem.setText(0, "(" + str(g.x) + ", " + str(g.y) + ")")
 			self.currentActorsWidget_GemSacks.addChild(newItem)
+			noSacks += 1
 		
-		self.currentActorsWidget_GemSacks.setText(0, "Gem Sacks (" + str(len(current_level.gemSacks)) + ")")
+		self.currentActorsWidget_GemSacks.setText(0, "Gem Sacks ({})".format(noSacks))
 
 	def UpdateBeaconList(self):
 		for i in reversed(range(self.currentActorsWidget_Beacons.childCount())):
 			self.currentActorsWidget_Beacons.removeChild(self.currentActorsWidget_Beacons.child(i))
 
-		for g in current_level.beacons:
+		noBeacs = 0
+		for g in current_level.actors:
+			if type(g) != sneaklib.VisibilityBeacon: continue
 			newItem = QtWidgets.QTreeWidgetItem()
 			newItem.setText(0, "(" + str(g.x) + ", " + str(g.y) + ")")
 			self.currentActorsWidget_Beacons.addChild(newItem)
+			noBeacs += 1
 		
-		self.currentActorsWidget_Beacons.setText(0, "Visibility Beacons (" + str(len(current_level.beacons)) + ")")
+		self.currentActorsWidget_Beacons.setText(0, "Visibility Beacons ({})".format(noBeacs))
 
 	def UpdateSelection(self):
 		self.actorInfo_RadiusEntry.hide()
@@ -696,7 +716,7 @@ class GridScene(QtWidgets.QGraphicsScene):
 		node.EstablishInputsOutputs()
 		
 	def clearObjects(self):
-		for gem in current_level.gemstones:
+		for gem in current_level.actors:
 			self.removeItem(gem)
 
 	def mousePressEvent(self, event):
@@ -819,59 +839,71 @@ class GridScene(QtWidgets.QGraphicsScene):
 
 
 
-
+		# drawing an actor
 		elif obj_mode == 3:
-			if obj_selected == 0: ### GEMSTONE SELECTED
-				gem = current_level.GemstoneAt(*array)
-				if draw_mode == 0:
-					if not gem:
+			actorSelected = current_level.ActorAt(*array)
+			if draw_mode == 0 and not actorSelected:
+				# create the actor for whatever type is selected (via obj_selected)
+				# Big Brain Time
+				newActor = obj_list[obj_selected](*array)
+				current_level.actors.append(newActor)
 
-						## At present the GemstoneItem (graphical) is different from the data-structure
-						## I tried to follow the way you did the tiles, where their data-structures and draw
-						## functions were together, but they weren't painting. Until we figure it out, this will
-						## work well enough.
-						gem = sneaklib.Gemstone(*array)
-						current_level.gemstones.append(gem)
-						#self.addItem(gem.graphicsItem)
-				elif draw_mode == 1:
-					if gem:
-						current_level.gemstones.remove(gem)
-						#self.removeItem(gem.graphicsItem)
+			elif draw_mode == 1 and actorSelected:
+				# delete the actor thats here
+				current_level.actors.remove(actorSelected)
 
-			elif obj_selected == 1: ### GUARD SELECTED
-				guard = current_level.GuardAt(*array)
-				if draw_mode == 0:
-					if not guard:
-						guard = sneaklib.Guard(*array)
-						current_level.guards.append(guard)
+		# elif obj_mode == 3:
+		# 	if obj_selected == 0: ### GEMSTONE SELECTED
+		# 		gem = current_level.GemstoneAt(*array)
+		# 		if draw_mode == 0:
+		# 			if not gem:
 
-				elif draw_mode == 1:
-					if guard:
-						current_level.guards.remove(guard)
-				#self.parent.UpdateNodeList()
+		# 				## At present the GemstoneItem (graphical) is different from the data-structure
+		# 				## I tried to follow the way you did the tiles, where their data-structures and draw
+		# 				## functions were together, but they weren't painting. Until we figure it out, this will
+		# 				## work well enough.
+		# 				gem = sneaklib.Gemstone(*array)
+		# 				current_level.gemstones.append(gem)
+		# 				#self.addItem(gem.graphicsItem)
+		# 		elif draw_mode == 1:
+		# 			if gem:
+		# 				current_level.gemstones.remove(gem)
+		# 				#self.removeItem(gem.graphicsItem)
 
-			elif obj_selected == 2: ### GEM SACK
-				gemSack = current_level.GemSackAt(*array)
-				if draw_mode == 0:
-					if not gemSack:
-						gemSack = sneaklib.GemSack(*array)
-						current_level.gemSacks.append(gemSack)
-				elif draw_mode == 1:
-					if gemSack:
-						current_level.gemSacks.remove(gemSack)
+		# 	elif obj_selected == 1: ### GUARD SELECTED
+		# 		guard = current_level.GuardAt(*array)
+		# 		if draw_mode == 0:
+		# 			if not guard:
+		# 				guard = sneaklib.Guard(*array)
+		# 				current_level.guards.append(guard)
 
-			elif obj_selected == 3: ### BEACON
-				beacon = current_level.BeaconAt(*array)
-				if draw_mode == 0:
-					if not beacon:
-						beacon = sneaklib.VisibilityBeacon(*array)
-						current_level.beacons.append(beacon)
-						current_level.selectedActors = [beacon]
+		# 		elif draw_mode == 1:
+		# 			if guard:
+		# 				current_level.guards.remove(guard)
+		# 		#self.parent.UpdateNodeList()
+
+		# 	elif obj_selected == 2: ### GEM SACK
+		# 		gemSack = current_level.GemSackAt(*array)
+		# 		if draw_mode == 0:
+		# 			if not gemSack:
+		# 				gemSack = sneaklib.GemSack(*array)
+		# 				current_level.gemSacks.append(gemSack)
+		# 		elif draw_mode == 1:
+		# 			if gemSack:
+		# 				current_level.gemSacks.remove(gemSack)
+
+		# 	elif obj_selected == 3: ### BEACON
+		# 		beacon = current_level.BeaconAt(*array)
+		# 		if draw_mode == 0:
+		# 			if not beacon:
+		# 				beacon = sneaklib.VisibilityBeacon(*array)
+		# 				current_level.beacons.append(beacon)
+		# 				current_level.selectedActors = [beacon]
 
 
-				elif draw_mode == 1:
-					if beacon:
-						current_level.beacons.remove(beacon)
+		# 		elif draw_mode == 1:
+		# 			if beacon:
+		# 				current_level.beacons.remove(beacon)
 
 				
 

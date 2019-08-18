@@ -16,13 +16,24 @@ class SneakObj():
 class Actor(SneakObj):
 	def __init__(self, x, y):
 		super().__init__(x, y)
+		self.id = -1
+
 	def move(self, x, y):
 		self.x+=x
 		self.y+=y
 
+	def pack_base(self):
+		outputStruct = struct.Struct('HHH')
+		return outputStruct.pack(int(self.id), int(self.x), int(self.y))
+
+	def pack(self):
+		return self.pack_base()
+
 class ThiefSpawnPoint(Actor):
 	def __init__(self, x, y):
 		super().__init__(x, y)
+
+		self.id = 0
 
 	def boundingRect(self):
 		return QtCore.QRectF(self.x * size, self.y * size, size, size)
@@ -34,6 +45,7 @@ class ThiefSpawnPoint(Actor):
 class ExitManhole(Actor):
 	def __init__(self, x, y):
 		super().__init__(x, y)
+		self.id = 1
 
 	def boundingRect(self):
 		return QtCore.QRectF(self.x * size, self.y * size, size, size)
@@ -44,6 +56,7 @@ class ExitManhole(Actor):
 class Gemstone(Actor):
 	def __init__(self, x, y):
 		super().__init__(x, y)
+		self.id = 3
 
 	def boundingRect(self):
 		return QtCore.QRectF(self.x * size, self.y * size, size, size)
@@ -55,6 +68,7 @@ class VisibilityBeacon(Actor):
 	def __init__(self, x, y, radius=10):
 		super().__init__(x, y)
 		self.radius = radius
+		self.id = 2
 
 	def boundingRect(self):
 		return QtCore.QRectF(self.x * size, self.y * size, size, size)
@@ -65,9 +79,18 @@ class VisibilityBeacon(Actor):
 		painter.drawEllipse((self.x * size) - (size * self.radius / 2) + (size / 2), (self.y * size) - (size * self.radius / 2) + (size / 2), self.radius * size, self.radius * size)
 		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/beacon_ico.png" if selected else "official_sneaksters/beacon_ico.png")))
 
+	def pack(self):
+		# Data:
+		# H - radius
+		# ? - Inverted
+		output = super().pack_base()
+		actorData = struct.Struct('H ? 3x')
+		return output + actorData.pack(self.radius, False)
+
 class GemSack(Actor):
 	def __init__(self, x, y):
 		super().__init__(x, y)
+		self.id = 4
 
 	def boundingRect(self):
 		return QtCore.QRectF(self.x * size, self.y * size, size, size)
@@ -78,7 +101,11 @@ class GemSack(Actor):
 class Guard(Actor):
 	def __init__(self, x, y):
 		super().__init__(x, y)
+		self.id = 5
+
 		self.nodes = []
+
+		self.nodeSetID = 0
 
 	def AddNode(self, node):
 		node.guard = self
@@ -109,6 +136,12 @@ class Guard(Actor):
 	def draw(self, painter, size, selected = False):
 		#print(self.nodes)
 		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/guard_selected.png" if selected else "official_sneaksters/guard.png")))
+
+	def pack(self):
+		# Data:
+		# H - Node set ID
+
+		return super().pack_base() + struct.pack("H 6x", int(self.nodeSetID))
 
 	
 class GuardNode(Actor):
@@ -309,10 +342,7 @@ class SneakstersLevel:
 
 		self.tiles = []
 		self.specialTiles = []
-		self.gemstones = []
-		self.guards = []
-		self.gemSacks = []
-		self.beacons = []
+		self.actors = []
 
 		self.thiefSpawnPoint = ThiefSpawnPoint(spawnX, spawnY)
 		self.exitManhole = ExitManhole(exitX, exitY)
@@ -341,19 +371,7 @@ class SneakstersLevel:
 		return None
 
 	def ObjectAt(self, x, y):
-		obj = self.GemstoneAt(x,y)
-		if obj: return obj
-
-		obj = self.GuardAt(x,y)
-		if obj: return obj
-
-		obj = self.GuardNodeAt(x,y)
-		if obj: return obj
-
-		obj = self.GemSackAt(x,y)
-		if obj: return obj
-
-		obj = self.BeaconAt(x,y)
+		obj = self.ActorAt(x,y)
 		if obj: return obj
 
 		if x == self.thiefSpawnPoint.x and y == self.thiefSpawnPoint.y:
@@ -371,35 +389,11 @@ class SneakstersLevel:
 		for actor in self.selectedActors:
 			actor.move(x,y)
 
-	def GemstoneAt(self, x, y):
-		for gem in self.gemstones:
-			if gem.x == x and gem.y == y:
-				return gem
-		return None
 
-	def GemSackAt(self, x, y):
-		for sack in self.gemSacks:
-			if sack.x == x and sack.y == y:
-				return sack
-		return None
-
-	def GuardAt(self, x, y):
-		for guard in self.guards:
-			if guard.x == x and guard.y == y:
-				return guard
-		return None
-
-	def GuardNodeAt(self, x, y):
-		for guard in self.guards:
-			for node in guard.nodes:
-				if node.x == x and node.y == y:
-					return node
-		return None
-
-	def BeaconAt(self, x, y):
-		for beacon in self.beacons:
-			if beacon.x == x and beacon.y == y:
-				return beacon
+	def ActorAt(self, x, y):
+		for i in self.actors:
+			if i.x == x and i.y == y:
+				return i
 		return None
 
 
@@ -495,27 +489,35 @@ class SneakstersLevel:
 		for tile in self.specialTiles:
 			tile.draw(painter, size, show_diag_walls)
 
-		for gem in self.gemstones:
-			gem.draw(painter, size, gem in self.selectedActors)
+		for actor in self.actors:
+			actor.draw(painter, size, actor in self.selectedActors)
 
-		for sack in self.gemSacks:
-			sack.draw(painter, size, sack in self.selectedActors)
+		# Need to separate node sets into their own thing first
+		# for guard in self.guards:
+		# 	for ni in range(len(guard.nodes)):
+		# 		guard.nodes[ni].draw(painter, size, guard.nodes[ni] in self.selectedActors)
+		# 		guard.nodes[ni].drawPath(painter, size, guard.nodes[ni].guard if ni == 0 else None, guard.nodes[ni+1] if ni < (len(guard.nodes)-1) else guard.nodes[ni].guard)
+		# 	guard.draw(painter, size, guard in self.selectedActors)
 
-		for guard in self.guards:
-			for ni in range(len(guard.nodes)):
-				guard.nodes[ni].draw(painter, size, guard.nodes[ni] in self.selectedActors)
-				guard.nodes[ni].drawPath(painter, size, guard.nodes[ni].guard if ni == 0 else None, guard.nodes[ni+1] if ni < (len(guard.nodes)-1) else guard.nodes[ni].guard)
-			guard.draw(painter, size, guard in self.selectedActors)
-
-		for beacon in self.beacons:
-			beacon.draw(painter, size, beacon in self.selectedActors)
 
 		self.thiefSpawnPoint.draw(painter, size, self.thiefSpawnPoint in self.selectedActors)
 		self.exitManhole.draw(painter, size, self.exitManhole in self.selectedActors)
 
 
 	def PackLevelData(self):
-		headerPacker = struct.Struct('4s II II II II II II I')
+		# LEVL header
+		# version number
+		
+		# Tile array offset
+		# Tile array data
+		
+		# Actor array offset
+		# Actor array data
+
+		# Nodeset array offset
+		# Nodeset array data
+
+		headerPacker = struct.Struct('4s B II II II')
 
 		# start the packing buffer
 		packed = b''
@@ -535,77 +537,32 @@ class SneakstersLevel:
 		#  -	For file alignment, yes.
 		while ((len(packed) + headerPacker.size) % 0x10)!=0:
 			packed+=b'\0'
-			
-		# calculate offset for tile section
-		SpecialTileArrayOffset = len(packed) + headerPacker.size
-		SpecialTileArrayData = self.PackSpecialTileData()
-
-		# add the tile data to the packing buffer
-		packed += SpecialTileArrayData
-		
-		# some null buffer I think?
-		#  -	For file alignment, yes.
-		while ((len(packed) + headerPacker.size) % 0x10)!=0:
-			packed+=b'\0'
 
 		# calculate offset and data for gemstone section
-		GemstoneArrayOffset = len(packed) + headerPacker.size
-		GemstoneArrayData = self.PackGemstoneData()
+		ActorArrayOffset = len(packed) + headerPacker.size
+		ActorArrayData = self.PackActorData()
 
 		# add gem data to packing buffer
-		packed += GemstoneArrayData
+		packed += ActorArrayData
 
 		# tbh I'm just following what John is doing here
 		while ((len(packed) + headerPacker.size) % 0x10) != 0:
 			packed += b'\0'
 
-		GuardArrayOffset = len(packed) + headerPacker.size
-		GuardArrayData = self.PackGuardData()
+		NodeSetArrayOffset = len(packed) + headerPacker.size
+		NodeSetArrayData = self.PackNodeSetData()
 
 		# add gem data to packing buffer
-		packed += GuardArrayData
+		packed += NodeSetArrayData
 
 		while ((len(packed) + headerPacker.size) % 0x10) != 0:
 			packed += b'\0'
-
-		GemSackArrayOffset = len(packed) + headerPacker.size
-		GemSackArrayData = self.PackGemSackData()
-
-		packed += GemSackArrayData
-
-
-		# Beacons
-		while ((len(packed) + headerPacker.size) % 0x10) != 0:
-			packed += b'\0'
-
-		BeaconArrayOffset = len(packed) + headerPacker.size
-		BeaconArrayData = self.PackBeaconData()
-
-		print("Beacon data is {} bytes long".format(len(BeaconArrayData)))
-
-		packed += BeaconArrayData
-
-
-		# now for the spawn point... doin the same thing
-		while ((len(packed) + headerPacker.size) % 0x10) != 0:
-			packed += b'\0'
-
-		SpawnPointArrayOffset = len(packed) + headerPacker.size
-		SpawnPointData = self.PackSpawnPointData()
-
-		packed += SpawnPointData
 		
-
-
-		headerToPack = (b'LEVL', 
+		headerToPack = (b'LEVL', 2,
 			TileArrayOffset, len(TileArrayData), 
-			SpecialTileArrayOffset, len(SpecialTileArrayData), 
-			GemstoneArrayOffset, len(GemstoneArrayData), 
-			GuardArrayOffset, len(GuardArrayData), 
-			GemSackArrayOffset, len(GemSackArrayData), 
-			BeaconArrayOffset, len(BeaconArrayData), 
-			SpawnPointArrayOffset)
-
+			ActorArrayOffset, len(ActorArrayData), 
+			NodeSetArrayOffset, len(NodeSetArrayData)
+			)
 		fileData = headerPacker.pack(*headerToPack)
 		print(headerToPack)
 		fileData += packed
@@ -615,42 +572,95 @@ class SneakstersLevel:
 		
 	def UnpackLevelData(self, data):
 		
-		headerUnpacker = struct.Struct('4s II II II II II II I')
+		headerUnpacker = struct.Struct('4s B II II II')
 		print(data[:headerUnpacker.size])
 		header = headerUnpacker.unpack(data[:headerUnpacker.size])
 
 
-		tileArrayOffset = header[1]
-		tileArrayLength = header[2]
+		tileArrayOffset = header[2]
+		tileArrayLength = header[3]
 
-		specialTileArrayOffset = header[3]
-		specialTileArrayLength = header[4]
+		actorArrayOffset = header[4]
+		actorArrayLength = header[5]
 
-		gemstoneArrayOffset = header[5]
-		gemstoneArrayLength = header[6]
+		nodeSetArrayOffset = header[6]
+		nodeSetArrayLength = header[7]
 
-		guardArrayOffset = header[7]
-		guardArrayLength = header[8]
+		self.UnpackTileData(data[header[2]:header[2]+header[3]])
+		self.UnpackActorData(data[header[4]:header[4]+header[5]])
+		self.UnpackNodeSetData(data[header[6]:header[6]+header[7]])
 
-		gemSackArrayOffset = header[9]
-		gemSackArrayLength = header[10]
+	def PackActorData(self):
+		# bam thats it
+		output = b''
 
-		beaconArrayOffset = header[11]
-		beaconArrayLength = header[12]
+		actorHeaderPacker = struct.Struct('4sI')
+		output += actorHeaderPacker.pack(b"ACTR", len(self.actors))
 
-		spawnPtOffset = header[13]
+		for i in self.actors:
+			output += i.pack()
 
-		self.UnpackTileData(data[header[1]:header[1]+header[2]])
-		self.UnpackSpecialTileData(data[header[3]:header[3]+header[4]])
-		self.UnpackGemstoneData(data[header[5]:header[5]+header[6]])
-		self.UnpackGuardData(data[header[7]:header[7] + header[8]])
-		self.UnpackGemSackData(data[header[9]:header[9]+header[10]])
-		
-		print(header)
-		self.UnpackBeaconData(data[header[11]:header[11] + header[12]])
+		return output
 
-		self.UnpackSpawnPointData(data[header[13:]])
+	def UnpackActorData(self, data):
+		# yoink
+		actorHeaderUnpacker = struct.Struct('4sI')
+		header = actorHeaderUnpacker.unpack(data[:actorHeaderUnpacker.size])
+		noActors = header[1]
 
+		# the 8s is the flags, it can be anything
+		singleActorUnpacker = struct.Struct('H HH 8s')
+		for i in range(noActors):
+			currentOffset = actorHeaderUnpacker.size + singleActorUnpacker.size * i
+			singleActorUnpackedData = singleActorUnpacker.unpack(data[currentOffset:currentOffset + singleActorUnpacker.size])
+
+			actor_id = singleActorUnpackedData[0]
+			actor_x = singleActorUnpackedData[1]
+			actor_y = singleActorUnpackedData[2]
+			actor_data = singleActorUnpackedData[3]
+
+			self.CreateActorFromData(actor_id, actor_x, actor_y, actor_data)
+
+	def PackNodeSetData(self):
+		return b''
+
+	def UnpackNodeSetData(self, data):
+		return
+
+	def CreateActorFromData(self, id, x, y, data):
+		# no switch statements :(
+
+		if id == 0:
+			# spawn point
+			newActor = ThiefSpawnPoint(x, y)
+
+		elif id == 1:
+			# exit point
+			newActor = ExitManhole(x, y)
+
+		elif id == 2:
+			# visibility beacon
+			radius, inverted = struct.unpack('H ? 3x', data)
+			newActor = VisibilityBeacon(x, y, radius)
+
+		elif id == 3:
+			# gemstone
+			newActor = Gemstone(x, y)
+
+		elif id == 4:
+			# gem sack
+			newActor = GemSack(x, y)
+
+		elif id == 5:
+			# guard
+			newActor = Guard(x, y)
+
+		else:
+			print("Unknown actor")
+			return
+
+		self.actors.append(newActor)
+		return
 
 	def PackGuardData(self):
 		noGuards = len(self.guards)
@@ -749,143 +759,7 @@ class SneakstersLevel:
 			tile = Tile(unpacked[0], unpacked[1], unpacked[2], unpacked[3])
 			self.specialTiles.append(tile)
 		#print(header)
-		#print(dataOut)
-
-	def PackGemstoneData(self):
-		headerPacker = struct.Struct('4sI')
-		header = (b"GEMS", len(self.gemstones))
-
-		packed = headerPacker.pack(*header)
-
-		for gem in self.gemstones:
-			gemPacker = struct.Struct('HHH')
-			gemData = (int(gem.x), int(gem.y), 0) # including a flag int just in case we wanna add flags to gems
-			packed += gemPacker.pack(*gemData)
-
-		return packed
-
-	def UnpackGemstoneData(self, data):
-		headerUnpacker = struct.Struct('4sI')
-
-		gemHeader = []
-		gemHeader = headerUnpacker.unpack(data[:8])
-
-		numberOfGems = gemHeader[1]
-
-		for i in range(numberOfGems):
-			gemUnpacker = struct.Struct('HHH')
-
-			unpacked = gemUnpacker.unpack_from(data, (8 + gemUnpacker.size * i))
-			gem = Gemstone(unpacked[0], unpacked[1])
-			self.gemstones.append(gem)
-
-	def PackBeaconData(self):
-		headerPacker = struct.Struct('4s I')
-		header = (b"BEAC", len(self.beacons))
-		packed = headerPacker.pack(*header)
-
-		for beacon in self.beacons:
-			beaconPacker = struct.Struct('HHH')
-			beaconData = (int(beacon.x), int(beacon.y), int(beacon.radius))
-			packed += beaconPacker.pack(*beaconData)
-
-
-		return packed
-
-	def UnpackBeaconData(self, data):
-		headerUnpacker = struct.Struct('4sI')
-
-		beaconHeader = []
-		beaconHeader = headerUnpacker.unpack(data[:8])
-
-		numberOfBeacons = beaconHeader[1]
-
-		for i in range(numberOfBeacons):
-			beaconUnpacker = struct.Struct('HHH')
-			unpacked = beaconUnpacker.unpack_from(data, (8 + beaconUnpacker.size * i))
-			beac = VisibilityBeacon(unpacked[0], unpacked[1], unpacked[2])
-			self.beacons.append(beac)
-
-	# def UnpackBeaconData(self, data):
-	# 	headerUnpacker = struct.Struct('4sI')
-
-	# 	header = headerUnpacker.unpack(data[:8])
-
-	# 	numberOfBeacons = header[1]
-	# 	print("Header is {}".format(header))
-	# 	print(data)
-
-	# 	data = data[8:]
-
-	# 	for i in range(numberOfBeacons):
-	# 		beaconUnpacker = struct.Struct('HHH')
-
-	# 		unpacked = beaconUnpacker.unpack_from(data, (beaconUnpacker.size * i))
-
-	# 		beac = VisibilityBeacon(unpacked[0], unpacked[1], unpacked[2])
-	# 		self.beacons.append(beac)
-
-	def PackGemSackData(self):
-		headerPacker = struct.Struct('4sI')
-		header = (b"GSAC", len(self.gemSacks))
-
-		packed = headerPacker.pack(*header)
-
-		for sack in self.gemSacks:
-			sackPacker = struct.Struct('HHH')
-			sackData = (int(sack.x), int(sack.y), 0) # flag int again
-			packed += sackPacker.pack(*sackData)
-
-		return packed
-
-	def UnpackGemSackData(self, data):
-		headerUnpacker = struct.Struct('4sI')
-
-		sackHeader = []
-		sackHeader = headerUnpacker.unpack(data[:8])
-
-		numberOfSacks = sackHeader[1]
-
-		for i in range(numberOfSacks):
-			sackUnpacker = struct.Struct('HHH')
-			unpacked = sackUnpacker.unpack_from(data, (8 + sackUnpacker.size * i))
-			sack = GemSack(unpacked[0], unpacked[1])
-			self.gemSacks.append(sack)
-
-	def PackSpawnPointData(self):
-		headerPacker = struct.Struct('4s HH HH')
-
-		packed = headerPacker.pack(b'SPWN', int(self.thiefSpawnPoint.x), int(self.thiefSpawnPoint.y), int(self.exitManhole.x), int(self.exitManhole.y))
-
-		print("Packing thief spawn point as {},{} and exit manhole as ".format(self.thiefSpawnPoint.x, self.thiefSpawnPoint.y, self.exitManhole.x, self.exitManhole.y))
-
-		return packed
-
-	def UnpackSpawnPointData(self, data):
-		headerUnpacker = struct.Struct('4s HH HH')
-
-		unpacked = headerUnpacker.unpack(data[:12])
-
-		self.thiefSpawnPoint.x = unpacked[1]
-		self.thiefSpawnPoint.y = unpacked[2]
-
-		self.exitManhole.x = unpacked[3]
-		self.exitManhole.y = unpacked[4]
-
-		print("Thief spawn point is {}, {} and exit manhole is at {}, {}".format(self.thiefSpawnPoint.x, self.thiefSpawnPoint.y, self.exitManhole.x, self.exitManhole.y))
-
-
-
-		
-
-	#def PackLevelData(self):
-	#	roomData = self.PackTileData()
-	#	gemData = self.PackGemstoneData()
-	#
-	#	lengthOfRoomData = len(roomData)
-	#	lengthOfGemData = len(gemData)
-	#
-	#	headerPacker = struct.Struct('4sII')
+		#print(dataOut
 		
 
 
