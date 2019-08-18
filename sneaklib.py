@@ -27,7 +27,7 @@ class Actor(SneakObj):
 		return outputStruct.pack(int(self.id), int(self.x), int(self.y))
 
 	def pack(self):
-		return self.pack_base()
+		return self.pack_base() + struct.pack('8x')
 
 class ThiefSpawnPoint(Actor):
 	def __init__(self, x, y):
@@ -84,7 +84,7 @@ class VisibilityBeacon(Actor):
 		# H - radius
 		# ? - Inverted
 		output = super().pack_base()
-		actorData = struct.Struct('H ? 3x')
+		actorData = struct.Struct('H ? 5x')
 		return output + actorData.pack(self.radius, False)
 
 class GemSack(Actor):
@@ -595,10 +595,14 @@ class SneakstersLevel:
 		output = b''
 
 		actorHeaderPacker = struct.Struct('4sI')
-		output += actorHeaderPacker.pack(b"ACTR", len(self.actors))
+		output += actorHeaderPacker.pack(b"ACTR", len(self.actors) + 2) # adding two for spawn point and exit manhole, which will always be there
 
 		for i in self.actors:
+			print("Packing actor of type {} - it is {} bytes".format(type(i), len(i.pack())))
 			output += i.pack()
+
+		output += self.thiefSpawnPoint.pack()
+		output += self.exitManhole.pack()
 
 		return output
 
@@ -608,11 +612,19 @@ class SneakstersLevel:
 		header = actorHeaderUnpacker.unpack(data[:actorHeaderUnpacker.size])
 		noActors = header[1]
 
+		theGoodStuff = data[actorHeaderUnpacker.size:]
+
 		# the 8s is the flags, it can be anything
 		singleActorUnpacker = struct.Struct('H HH 8s')
 		for i in range(noActors):
-			currentOffset = actorHeaderUnpacker.size + singleActorUnpacker.size * i
-			singleActorUnpackedData = singleActorUnpacker.unpack(data[currentOffset:currentOffset + singleActorUnpacker.size])
+			currentOffset = singleActorUnpacker.size * i
+
+			theData = theGoodStuff[currentOffset:currentOffset + singleActorUnpacker.size]
+			print(len(theData))
+
+
+			#if len(data) != singleActorUnpacker.size: continue
+			singleActorUnpackedData = singleActorUnpacker.unpack(theData)
 
 			actor_id = singleActorUnpackedData[0]
 			actor_x = singleActorUnpackedData[1]
@@ -630,17 +642,23 @@ class SneakstersLevel:
 	def CreateActorFromData(self, id, x, y, data):
 		# no switch statements :(
 
+		print("Actor has ID {}".format(id))
 		if id == 0:
 			# spawn point
-			newActor = ThiefSpawnPoint(x, y)
+			self.thiefSpawnPoint = ThiefSpawnPoint(x, y)
+			print("Thief spawn point goes at {},{}".format(x, y))
+			return
 
 		elif id == 1:
 			# exit point
-			newActor = ExitManhole(x, y)
+			self.exitManhole = ExitManhole(x, y)
+			print("Manhole goes at {},{}".format(x, y))
+			return
 
 		elif id == 2:
 			# visibility beacon
-			radius, inverted = struct.unpack('H ? 3x', data)
+			radius, inverted = struct.unpack('H ? 5x', data)
+			print("Visibility beacon has radius {}".format(radius))
 			newActor = VisibilityBeacon(x, y, radius)
 
 		elif id == 3:
@@ -659,7 +677,9 @@ class SneakstersLevel:
 			print("Unknown actor")
 			return
 
-		self.actors.append(newActor)
+		if newActor is not None:
+			self.actors.append(newActor)
+			print("Created actor of type {}".format(type(newActor)))
 		return
 
 	def PackGuardData(self):

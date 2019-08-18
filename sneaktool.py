@@ -45,12 +45,12 @@ Actors to select
 """
 
 
-obj_list = (
+obj_list = [
 	sneaklib.Gemstone,
 	sneaklib.Guard,
 	sneaklib.GemSack,
 	sneaklib.VisibilityBeacon
-)
+]
 
 class Window(QtWidgets.QMainWindow):
 	"""Main Window"""
@@ -354,8 +354,18 @@ class Window(QtWidgets.QMainWindow):
 		print(saveTo)
 		if saveTo[0] == "": return
 		file = open(saveTo[0], 'wb')
-		data_to_save = current_level.PackLevelData()
-		file.write(data_to_save)
+
+		try:
+			data_to_save = current_level.PackLevelData()
+			file.write(data_to_save)
+		except Exception as e:
+			msgbox = QtWidgets.QMessageBox()
+			msgbox.setIcon(QtWidgets.QMessageBox.Critical)
+			msgbox.setText("An error ocurred and the file could not be saved.")
+			msgbox.setInformativeText(str(e))
+			msgbox.show()
+			print(e)
+		
 		file.close()
 
 	def openFile(self):
