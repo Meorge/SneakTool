@@ -62,6 +62,8 @@ class Window(QtWidgets.QMainWindow):
 		obj_mode = 0
 		obj_selected = 0
 
+		self.nodeSetSelected = None
+
 		super(Window, self).__init__(parent)
 
 		#print(icons_path)
@@ -157,12 +159,14 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_ObjType_Wall = QtWidgets.QPushButton("Wall")
 		self.toolPaletteWidget_ObjType_Door = QtWidgets.QPushButton("Door")
 		self.toolPaletteWidget_ObjType_Spr = QtWidgets.QPushButton("Actor")
+		self.toolPaletteWidget_ObjType_Node = QtWidgets.QPushButton("Node")
 		
 		self.toolPaletteWidget_ObjType_Room.clicked.connect(self.SetRoomMode)
 		self.toolPaletteWidget_ObjType_FloorShape.clicked.connect(self.SetRoomShapeMode)
 		self.toolPaletteWidget_ObjType_Wall.clicked.connect(self.EnableWallMode)
 		self.toolPaletteWidget_ObjType_Door.clicked.connect(self.EnableDoorMode)
 		self.toolPaletteWidget_ObjType_Spr.clicked.connect(self.SetActorMode)
+		self.toolPaletteWidget_ObjType_Node.clicked.connect(self.SetNodeMode)
 		
 		self.toolPaletteWidget_ObjType_Room.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Room.setAutoExclusive(True)
@@ -179,12 +183,16 @@ class Window(QtWidgets.QMainWindow):
 		self.toolPaletteWidget_ObjType_Spr.setCheckable(True)
 		self.toolPaletteWidget_ObjType_Spr.setAutoExclusive(True)
 
+		self.toolPaletteWidget_ObjType_Node.setCheckable(True)
+		self.toolPaletteWidget_ObjType_Node.setAutoExclusive(True)
+
 		self.toolPaletteWidget_ObjTypeLayout = QtWidgets.QVBoxLayout()
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Room)
 		# self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_FloorShape)
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Wall)
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Door)
 		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Spr)
+		self.toolPaletteWidget_ObjTypeLayout.addWidget(self.toolPaletteWidget_ObjType_Node)
 
 		self.toolPaletteWidget_ObjType.setLayout(self.toolPaletteWidget_ObjTypeLayout)
 
@@ -239,19 +247,9 @@ class Window(QtWidgets.QMainWindow):
 		self.actorInfo_headerLayout.addLayout(self.actorInfo_labelsLayout)
 
 		self.actorInfo_layout = QtWidgets.QVBoxLayout()
-
-		self.actorInfo_nodeList = QtWidgets.QListWidget()
-		self.actorInfo_addNodeButton = QtWidgets.QPushButton("Add Node")
-		self.actorInfo_addNodeButton.clicked.connect(self.AddNodeToGuard)
-		self.actorInfo_removeNodeButton = QtWidgets.QPushButton("Remove Node")
-		self.actorInfo_nodeLayout = QtWidgets.QHBoxLayout()
-		self.actorInfo_nodeLayout.addWidget(self.actorInfo_addNodeButton)
-		self.actorInfo_nodeLayout.addWidget(self.actorInfo_removeNodeButton)
 		
 		self.actorInfo_layout.addLayout(self.actorInfo_headerLayout, 100)
 		self.actorInfo_layout.addWidget(self.actorInfo_RadiusEntry)
-		self.actorInfo_layout.addWidget(self.actorInfo_nodeList)
-		self.actorInfo_layout.addLayout(self.actorInfo_nodeLayout)
 		self.actorInfo.setLayout(self.actorInfo_layout)
 
 		self.actorInfo_Panel = QtWidgets.QDockWidget()
@@ -260,12 +258,17 @@ class Window(QtWidgets.QMainWindow):
 		self.addDockWidget(Qt.RightDockWidgetArea, self.actorInfo_Panel)
 
 
-		### CURRENT actorS
-		self.currentActors = QtWidgets.QDockWidget()
-		self.currentActors.setWindowTitle("Current actors")
+		### CURRENT ACTORS
+		self.currentActorsAndNodeSets = QtWidgets.QDockWidget()
+
 		self.currentActorsWidget = QtWidgets.QTreeWidget()
-		self.currentActors.setWidget(self.currentActorsWidget)
-		self.addDockWidget(Qt.RightDockWidgetArea, self.currentActors)
+
+		self.currentActorsAndNodeSetsWidget = QtWidgets.QTabWidget()
+		self.currentActorsAndNodeSetsWidget.addTab(self.currentActorsWidget, "Actors")
+		
+
+		self.currentActorsAndNodeSets.setWidget(self.currentActorsAndNodeSetsWidget)
+		self.addDockWidget(Qt.RightDockWidgetArea, self.currentActorsAndNodeSets)
 
 		self.currentActorsWidget.setHeaderHidden(True)
 		
@@ -289,6 +292,28 @@ class Window(QtWidgets.QMainWindow):
 		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_Grds)
 		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_GemSacks)
 		self.currentActorsWidget.addTopLevelItem(self.currentActorsWidget_Beacons)
+
+
+		### NODE LIST
+		self.nodeListWidget_List = QtWidgets.QListWidget()
+		self.nodeListWidget_List.currentRowChanged.connect(self.nodeSetSelectedChanged) # need this to not fire when losing focus
+		
+
+		self.nodeListWidget_Add = QtWidgets.QPushButton("New Node Set")
+		self.nodeListWidget_Del = QtWidgets.QPushButton("Delete Node Set")
+
+		self.nodeListWidget_Add.clicked.connect(self.AddNodeSet)
+		self.nodeListWidget_Del.clicked.connect(self.RemoveNodeSet)
+
+		self.nodeListWidget_Layout = QtWidgets.QVBoxLayout()
+		self.nodeListWidget_Layout.addWidget(self.nodeListWidget_List)
+		self.nodeListWidget_Layout.addWidget(self.nodeListWidget_Add)
+		self.nodeListWidget_Layout.addWidget(self.nodeListWidget_Del)
+
+		self.nodeListWidget = QtWidgets.QWidget()
+		self.nodeListWidget.setLayout(self.nodeListWidget_Layout)
+
+		self.currentActorsAndNodeSetsWidget.addTab(self.nodeListWidget, "Nodes")
 
 
 		### BOTTOM BAR
@@ -327,6 +352,61 @@ class Window(QtWidgets.QMainWindow):
 
 		self.UpdateSelection()
 
+	def AddNodeSet(self):
+		newNodeSet = sneaklib.NodeSet()
+
+		current_level.nodeSets.append(newNodeSet)
+
+		self.nodeListWidget_List.addItem("")
+
+		self.UpdateNodeSetList()
+
+	def RemoveNodeSet(self):
+		print("==========\nREMOVE NODE SET")
+		print(self.nodeSetSelected)
+		nodeSetToRemove = self.nodeSetSelected
+		if self.nodeSetSelected not in current_level.nodeSets:
+			print("This node set isn't in the node set list, somehow...")
+			print("{} node sets".format(len(current_level.nodeSets)))
+			
+
+		if len(current_level.nodeSets) == 1:
+			print("clear it boy")
+			indexOfNodeSet = 0
+			self.nodeListWidget_List.clear()
+			current_level.nodeSets.clear()
+		else:
+			try:
+				indexOfNodeSet = current_level.nodeSets.index(nodeSetToRemove)
+			except ValueError as e:
+				# not found
+				print("That node set wasn't found in current_level.nodeSets")
+				return
+			self.nodeListWidget_List.takeItem(indexOfNodeSet)
+
+
+		if nodeSetToRemove in current_level.nodeSets:
+			current_level.nodeSets.remove(nodeSetToRemove)
+
+		self.nodeSetSelected = None
+		self.UpdateNodeSetList()
+		self.gridScene.update()
+		
+
+	def nodeSetSelectedChanged(self, row):
+		print("Selection has changed! Currently selected row is {}".format(row))
+		self.nodeSetSelected = current_level.nodeSets[row]
+
+		if self.nodeListWidget_List.count() == 1:
+			self.nodeSetSelected = current_level.nodeSets[0]
+
+	def UpdateNodeSetList(self):
+		# need to fix this, otherwise bleh
+		print("Currently {} node sets".format(len(current_level.nodeSets)))
+		for i in range(len(current_level.nodeSets)):
+			if self.nodeListWidget_List.item(i) is None: continue
+			self.nodeListWidget_List.item(i).setText("{} - {} nodes".format(i, len(current_level.nodeSets[i].nodes)))
+
 	def UpdateStatusBar(self):
 		global current_level
 		self.footerBar_label.setText(str(len(current_level.tiles)) + " rooms")
@@ -363,8 +443,8 @@ class Window(QtWidgets.QMainWindow):
 			msgbox.setIcon(QtWidgets.QMessageBox.Critical)
 			msgbox.setText("An error ocurred and the file could not be saved.")
 			msgbox.setInformativeText(str(e))
-			msgbox.show()
-			print(e)
+			msgbox.exec()
+			traceback.print_exc()
 		
 		file.close()
 
@@ -378,18 +458,20 @@ class Window(QtWidgets.QMainWindow):
 		self.gridScene.clearObjects()
 
 		current_level = sneaklib.SneakstersLevel()
-
+		
+		data = file.read()
+		file.close()
 		try:
-			data = file.read()
-			file.close()
 			current_level.UnpackLevelData(data)
-		except Exception as ex:
+		except Exception as e:
+			msgbox = QtWidgets.QMessageBox()
+			msgbox.setIcon(QtWidgets.QMessageBox.Critical)
+			msgbox.setText("An error ocurred and the file could not be loaded.")
+			msgbox.setInformativeText(str(e))
+			msgbox.exec()
 			traceback.print_exc()
 			return
 
-		
-
-		# self.gridView.centerOn(QtCore.QPoint(current_level.thiefSpawnPoint.x, current_level.thiefSpawnPoint.y))
 		self.centerView()
 		self.UpdateActorList()
 		self.gridScene.update(self.gridScene.sceneRect())
@@ -495,6 +577,10 @@ class Window(QtWidgets.QMainWindow):
 		global obj_mode
 		obj_mode = 4
 
+	def SetNodeMode(self):
+		global obj_mode
+		obj_mode = 5
+
 
 	def actorItemChanged(self, currentRow):
 		global obj_selected
@@ -571,31 +657,15 @@ class Window(QtWidgets.QMainWindow):
 				gemIco = QtGui.QPixmap(icons_path + "official_sneaksters/gem.png")
 				self.actorInfo_actorIconLabel.setPixmap(gemIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
 
-				self.actorInfo_addNodeButton.setEnabled(False)
-				self.actorInfo_removeNodeButton.setEnabled(False)
-
 			elif type(currentSelected) is sneaklib.Guard:
 				self.actorInfo_actorName.setText("Guard")
 				guardIco = QtGui.QPixmap(icons_path + "official_sneaksters/guard.png")
 				self.actorInfo_actorIconLabel.setPixmap(guardIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
-				self.actorInfo_addNodeButton.setEnabled(True)
-				self.actorInfo_removeNodeButton.setEnabled(True)
-
-			elif type(currentSelected) is sneaklib.GuardNode:
-				self.actorInfo_actorName.setText("Guard")
-				guardIco = QtGui.QPixmap(icons_path + "official_sneaksters/guard.png")
-				self.actorInfo_actorIconLabel.setPixmap(guardIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
-				self.actorInfo_addNodeButton.setEnabled(True)
-				self.actorInfo_removeNodeButton.setEnabled(True)
-				self.actorInfo_actorPos.setText("(" + str(currentSelected.guard.x) + ", " + str(currentSelected.guard.y) + ")")
 
 			elif type(currentSelected) is sneaklib.GemSack:
 				self.actorInfo_actorName.setText("Gem Sack")
 				gemsackIco = QtGui.QPixmap(icons_path + "official_sneaksters/gem_sack_ico.png")
 				self.actorInfo_actorIconLabel.setPixmap(gemsackIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
-
-				self.actorInfo_addNodeButton.setEnabled(False)
-				self.actorInfo_removeNodeButton.setEnabled(False)
 
 			elif type(currentSelected) is sneaklib.VisibilityBeacon:
 				self.actorInfo_actorName.setText("Visibility Beacon")
@@ -603,25 +673,16 @@ class Window(QtWidgets.QMainWindow):
 				self.actorInfo_actorIconLabel.setPixmap(gemsackIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
 
 				self.actorInfo_RadiusEntry.show()
-			
-				
-
-				self.actorInfo_addNodeButton.setEnabled(False)
-				self.actorInfo_removeNodeButton.setEnabled(False)
 
 		elif len(current_level.selectedActors) > 1:
 			self.actorInfo_actorName.setText("Multiple actors selected")
 			self.actorInfo_actorPos.setText("")
 			self.actorInfo_actorIconLabel.clear()
-			self.actorInfo_addNodeButton.setEnabled(False)
-			self.actorInfo_removeNodeButton.setEnabled(False)
 
 		else:
 			self.actorInfo_actorName.setText("No actors selected")
 			self.actorInfo_actorPos.setText("")
 			self.actorInfo_actorIconLabel.clear()
-			self.actorInfo_addNodeButton.setEnabled(False)
-			self.actorInfo_removeNodeButton.setEnabled(False)
 
 	def updateRadValue(self, val):
 		if len(current_level.selectedActors) == 0: return
@@ -629,47 +690,6 @@ class Window(QtWidgets.QMainWindow):
 			current_level.selectedActors[0].radius = val
 
 		self.gridScene.update()
-
-		
-
-
-	def AddNodeToGuard(self):
-		if type(current_level.selectedActors[0]) is sneaklib.Guard:
-			x = current_level.selectedActors[0].x
-			y = current_level.selectedActors[0].y
-		else:
-			x = current_level.selectedActors[0].guard.x
-			y = current_level.selectedActors[0].guard.y
-
-		newNode = sneaklib.GuardNode(x, y)
-
-		if type(current_level.selectedActors[0]) is sneaklib.Guard:
-			current_level.selectedActors[0].AddNode(newNode)
-		else:
-			current_level.selectedActors[0].guard.AddNode(newNode)
-
-		self.gridScene.update()
-
-		self.UpdateNodeList()
-
-	def UpdateNodeList(self):
-		print("UPDATE NODE LIST")
-		for i in reversed(range(self.actorInfo_nodeList.count())):
-			self.actorInfo_nodeList.takeItem(i)
-
-		if len(current_level.selectedActors) == 0:
-			return
-		if type(current_level.selectedActors[0]) is sneaklib.Guard:
-			guard = current_level.selectedActors[0]
-		elif type(current_level.selectedActors[0]) is sneaklib.GuardNode:
-			guard = current_level.selectedActors[0].guard
-		else:
-			return
-
-
-
-		for node in guard.nodes:
-			self.actorInfo_nodeList.addItem("(" + str(int(node.x)) + ", " + str(int(node.y)) + ")")
 
 
 			
@@ -750,7 +770,6 @@ class GridScene(QtWidgets.QGraphicsScene):
 		#nearestMultipleY = event.scenePos().y() + (CELL_SIZE - event.scenePos().y()) % CELL_SIZE
 
 		array = [tileX, tileY]
-		print("DRAW MODE IS " + str(draw_mode))
 		if draw_mode == 2:
 			if((QtGui.QGuiApplication.keyboardModifiers() & QtCore.Qt.ShiftModifier) != QtCore.Qt.ShiftModifier):
 				current_level.selectedActors.clear()
@@ -761,8 +780,6 @@ class GridScene(QtWidgets.QGraphicsScene):
 
 				if len(current_level.selectedActors) == 1 and type(current_level.selectedActors[0]) is sneaklib.VisibilityBeacon:
 					self.parent.actorInfo_RadiusEntry.setValue(obj.radius)
-
-			self.parent.UpdateNodeList()
 		elif obj_mode == 0:
 			if draw_mode == 0:
 				tile = current_level.TileAt(*array)
@@ -862,6 +879,23 @@ class GridScene(QtWidgets.QGraphicsScene):
 				# delete the actor thats here
 				current_level.actors.remove(actorSelected)
 
+		# Node list stuff
+		elif obj_mode == 5 and self.parent.nodeSetSelected is not None:
+			print("doing something with a node set")
+			actorSelected = current_level.NodeAt(*array)
+			print("Object selected : {}".format(actorSelected))
+			if draw_mode == 0: # add node
+				newNode = sneaklib.NodeObject(*array)
+				self.parent.nodeSetSelected.nodes.append(newNode)
+				self.parent.UpdateNodeSetList()
+			elif draw_mode == 1 and actorSelected in self.parent.nodeSetSelected.nodes:
+				# delete node here
+				print("delete the node")
+				self.parent.nodeSetSelected.nodes.remove(actorSelected)
+				self.parent.UpdateNodeSetList()
+
+
+
 		# elif obj_mode == 3:
 		# 	if obj_selected == 0: ### GEMSTONE SELECTED
 		# 		gem = current_level.GemstoneAt(*array)
@@ -917,8 +951,6 @@ class GridScene(QtWidgets.QGraphicsScene):
 
 				
 
-				
-			self.parent.UpdateNodeList()
 			self.parent.UpdateGemSackList()
 			self.parent.UpdateBeaconList()
 						
@@ -950,7 +982,6 @@ class GridScene(QtWidgets.QGraphicsScene):
 		self.parent.UpdateSelection()
 		self.parent.UpdateGemstoneList()
 		self.parent.UpdateGuardList()
-		self.parent.UpdateNodeList()
 		self.parent.UpdateGemSackList()
 		self.parent.UpdateBeaconList()
 

@@ -125,7 +125,7 @@ class Guard(Actor):
 
 	def unpackNodeData(self, data, noNodes, offset):
 		for ni in range(noNodes): #I know we could just iterate directly, but I identify by id just to make sure we're in order.
-			node = GuardNode(*struct.unpack("2H", data[offset+4*ni : offset+4+4*ni]))
+			node = NodeObject(*struct.unpack("2H", data[offset+4*ni : offset+4+4*ni]))
 			node.guard = self
 
 			
@@ -144,10 +144,9 @@ class Guard(Actor):
 		return super().pack_base() + struct.pack("H 6x", int(self.nodeSetID))
 
 	
-class GuardNode(Actor):
+class NodeObject(Actor):
 	def __init__(self, x, y):
 		super().__init__(x, y)
-		self.guard = None
 		self.fillColor = QtGui.QColor(0, 150, 0)
 		self.selectedFillColor = QtGui.QColor(0, 200, 0)
 
@@ -167,8 +166,6 @@ class GuardNode(Actor):
 
 		angle = atan2(fx2-fx1, fy2-fy1)
 
-		#print(angle)
-
 		s = sin(angle)
 		c = cos(angle)
 
@@ -183,14 +180,31 @@ class GuardNode(Actor):
 			self.__seriouslyDrawPath(painter, size, self.x, self.y, nextActor.x, nextActor.y)
 
 	def draw(self, painter, size, selected = False):
-		#print("painting a node")
 		fillColor = self.selectedFillColor if selected else self.fillColor
 		
 		painter.setBrush(QtGui.QBrush(fillColor))
 		painter.setPen(QtGui.QPen(QtGui.QColor(0, 170, 0)))
 
-		#painter.drawRect(self.x * size, self.y * size, size, size)
 		painter.drawEllipse(self.x * size, self.y * size, size, size)
+
+class NodeSet:
+	def __init__(self):
+		self.nodes = []
+
+	def addNode(self, node: NodeObject):
+		self.nodes.append(node)
+
+	def removeNode(self, node: NodeObject):
+		self.nodes.remove(node)
+
+	def pack(self):
+		output = b""
+		singleNodePacker = struct.Struct("HHH")
+
+		for i in self.nodes:
+			output += singleNodePacker.pack(int(i.x), int(i.y), int(0))
+
+		return output
 
 
 class Tile(SneakObj):
@@ -343,6 +357,7 @@ class SneakstersLevel:
 		self.tiles = []
 		self.specialTiles = []
 		self.actors = []
+		self.nodeSets = []
 
 		self.thiefSpawnPoint = ThiefSpawnPoint(spawnX, spawnY)
 		self.exitManhole = ExitManhole(exitX, exitY)
@@ -371,8 +386,15 @@ class SneakstersLevel:
 		return None
 
 	def ObjectAt(self, x, y):
+		print("Looking for {},{}".format(x, y))
 		obj = self.ActorAt(x,y)
 		if obj: return obj
+
+		for i in self.nodeSets:
+			for g in i.nodes:
+				print("This node is {},{}".format(g.x, g.y))
+				if x == g.x and y == g.y:
+					return g
 
 		if x == self.thiefSpawnPoint.x and y == self.thiefSpawnPoint.y:
 			return self.thiefSpawnPoint
@@ -394,6 +416,14 @@ class SneakstersLevel:
 		for i in self.actors:
 			if i.x == x and i.y == y:
 				return i
+		return None
+
+	def NodeAt(self, x, y):
+		for i in self.nodeSets:
+			for g in i.nodes:
+				print("This node is {},{}".format(g.x, g.y))
+				if x == g.x and y == g.y:
+					return g
 		return None
 
 
@@ -491,6 +521,11 @@ class SneakstersLevel:
 
 		for actor in self.actors:
 			actor.draw(painter, size, actor in self.selectedActors)
+
+		for nodeSet in self.nodeSets:
+			for nodeIndex in range(len(nodeSet.nodes)):
+				nodeSet.nodes[nodeIndex].draw(painter, size, nodeSet.nodes[nodeIndex] in self.selectedActors)
+				nodeSet.nodes[nodeIndex].drawPath(painter, size, nodeSet.nodes[len(nodeSet.nodes)-1] if nodeIndex == 0 else None, nodeSet.nodes[nodeIndex+1] if nodeIndex < (len(nodeSet.nodes)-1) else nodeSet.nodes[0])
 
 		# Need to separate node sets into their own thing first
 		# for guard in self.guards:
@@ -634,7 +669,22 @@ class SneakstersLevel:
 			self.CreateActorFromData(actor_id, actor_x, actor_y, actor_data)
 
 	def PackNodeSetData(self):
-		return b''
+		nodeSetArrayHeaderPacker = struct.Struct('4s I')
+		singleNodePacker = struct.Struct('HHH')
+
+		output = b''
+		output += nodeSetArrayHeaderPacker.pack(b"NODE", len(self.nodeSets))
+
+		# next, we need to get the offsets of each node set
+		offset = 0
+		for i in self.nodeSets:
+			output += struct.pack('H', int(offset))
+			offset += len(i.nodes) * singleNodePacker.size
+
+		for i in self.nodeSets:
+			output += i.pack()
+
+		return output
 
 	def UnpackNodeSetData(self, data):
 		return
