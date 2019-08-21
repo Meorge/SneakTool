@@ -22,6 +22,15 @@ class Actor(SneakObj):
 		self.x+=x
 		self.y+=y
 
+	def createPropertyWidgets(self):
+		emptyLayout = QtWidgets.QVBoxLayout()
+		lab = QtWidgets.QPushButton("woot")
+		emptyLayout.addWidget(lab)
+
+		w = QtWidgets.QWidget()
+		w.setLayout(emptyLayout)
+		return w
+
 	def pack_base(self):
 		outputStruct = struct.Struct('HHH')
 		return outputStruct.pack(int(self.id), int(self.x), int(self.y))
@@ -40,6 +49,14 @@ class ThiefSpawnPoint(Actor):
 
 	def draw(self, painter, size, selected = False):
 		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/thief_ico.png" if selected else "official_sneaksters/thief_ico.png")))
+		
+	def createPropertyWidgets(self):
+		lab = QtWidgets.QLabel("Thief spawn!!!!")
+		emptyLayout = QtWidgets.QVBoxLayout()
+		emptyLayout.addWidget(lab)
+		w = QtWidgets.QWidget()
+		w.setLayout(emptyLayout)
+		return w
 
 
 class ExitManhole(Actor):
@@ -64,17 +81,32 @@ class Gemstone(Actor):
 	def draw(self, painter, size, selected = False):
 		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/gem_selected.png" if selected else "official_sneaksters/gem.png")))
 
+
+	def createPropertyWidgets(self):
+		lab = QtWidgets.QPushButton("gemmystone!!!!")
+		bub = QtWidgets.QLabel("AAAAA")
+		emptyLayout = QtWidgets.QVBoxLayout()
+		emptyLayout.addWidget(lab)
+		emptyLayout.addWidget(bub)
+		w = QtWidgets.QWidget()
+		w.setLayout(emptyLayout)
+		return w
+
 class VisibilityBeacon(Actor):
 	def __init__(self, x, y, radius=10):
 		super().__init__(x, y)
 		self.radius = radius
+		self.invert = False
 		self.id = 2
 
 	def boundingRect(self):
 		return QtCore.QRectF(self.x * size, self.y * size, size, size)
 
 	def draw(self, painter, size, selected = False):
-		painter.setBrush(QtGui.QBrush(QtGui.QColor(100,100,200,100)))
+		if not self.invert:
+			painter.setBrush(QtGui.QBrush(QtGui.QColor(100,100,200,100)))
+		else:
+			painter.setBrush(QtGui.QBrush(QtGui.QColor(200,100,100,100)))
 		painter.setPen(QtGui.QPen(QtGui.QColor(0, 0, 0, 0)))
 		painter.drawEllipse((self.x * size) - (size * self.radius / 2) + (size / 2), (self.y * size) - (size * self.radius / 2) + (size / 2), self.radius * size, self.radius * size)
 		painter.drawPixmap(self.x * size, self.y * size, size, size, QtGui.QPixmap(icons_path + ("official_sneaksters/beacon_ico.png" if selected else "official_sneaksters/beacon_ico.png")))
@@ -85,7 +117,7 @@ class VisibilityBeacon(Actor):
 		# ? - Inverted
 		output = super().pack_base()
 		actorData = struct.Struct('H ? 5x')
-		return output + actorData.pack(self.radius, False)
+		return output + actorData.pack(self.radius, self.invert)
 
 class GemSack(Actor):
 	def __init__(self, x, y):
@@ -201,7 +233,7 @@ class NodeSet:
 		output = b""
 		headerPacker = struct.Struct("H")
 		output += headerPacker.pack(len(self.nodes))
-		
+
 		singleNodePacker = struct.Struct("HHH")
 
 		for i in self.nodes:
@@ -521,14 +553,16 @@ class SneakstersLevel:
 			
 		for tile in self.specialTiles:
 			tile.draw(painter, size, show_diag_walls)
-
-		for actor in self.actors:
-			actor.draw(painter, size, actor in self.selectedActors)
-
+			
 		for nodeSet in self.nodeSets:
 			for nodeIndex in range(len(nodeSet.nodes)):
 				nodeSet.nodes[nodeIndex].draw(painter, size, nodeSet.nodes[nodeIndex] in self.selectedActors)
 				nodeSet.nodes[nodeIndex].drawPath(painter, size, nodeSet.nodes[len(nodeSet.nodes)-1] if nodeIndex == 0 else None, nodeSet.nodes[nodeIndex+1] if nodeIndex < (len(nodeSet.nodes)-1) else nodeSet.nodes[0])
+
+		for actor in self.actors:
+			actor.draw(painter, size, actor in self.selectedActors)
+
+
 
 		# Need to separate node sets into their own thing first
 		# for guard in self.guards:
@@ -797,6 +831,8 @@ class SneakstersLevel:
 		elif id == 5:
 			# guard
 			newActor = Guard(x, y)
+			nID = struct.unpack('H 6x', data)[0]
+			newActor.nodeSetID = nID
 
 		else:
 			print("Unknown actor")

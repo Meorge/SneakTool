@@ -64,6 +64,8 @@ class Window(QtWidgets.QMainWindow):
 
 		self.nodeSetSelected = None
 
+		self.previousSelection = None
+
 		super(Window, self).__init__(parent)
 
 		#print(icons_path)
@@ -230,10 +232,40 @@ class Window(QtWidgets.QMainWindow):
 		self.actorInfo_actorName = QtWidgets.QLabel("Guard")
 		self.actorInfo_actorPos = QtWidgets.QLabel("(300, 300)")
 
-		self.actorInfo_RadiusEntry = QtWidgets.QSpinBox()
-		self.actorInfo_RadiusEntry.setRange(0, 100)
-		self.actorInfo_RadiusEntry.valueChanged.connect(self.updateRadValue)
-		self.actorInfo_RadiusEntry.hide()
+		self.actorInfo_PropertyWidget = QtWidgets.QStackedWidget()
+
+		#### Guard stuff
+		self.actorInfo_PropertyWidgetGuard = QtWidgets.QWidget()
+		self.actorInfo_PropertyWidgetGuardLayout = QtWidgets.QFormLayout()
+		self.actorInfo_PropertyWidgetGuard_NodeID = QtWidgets.QSpinBox()
+		self.actorInfo_PropertyWidgetGuard_NodeID.setRange(0, 0xFFFF)
+		self.actorInfo_PropertyWidgetGuard_NodeID.valueChanged.connect(self.GuardNodeIDChanged)
+
+		self.actorInfo_PropertyWidgetGuardLayout.addRow(QtWidgets.QLabel("Node Set ID"), self.actorInfo_PropertyWidgetGuard_NodeID)
+		self.actorInfo_PropertyWidgetGuard.setLayout(self.actorInfo_PropertyWidgetGuardLayout)
+
+		#### Visibility beacon stuff
+		self.actorInfo_PropertyWidgetVisibilityBeacon = QtWidgets.QWidget()
+		self.actorInfo_PropertyWidgetVisibilityBeaconLayout = QtWidgets.QFormLayout()
+		self.actorInfo_PropertyWidgetVisibilityBeacon_Radius = QtWidgets.QSpinBox()
+		self.actorInfo_PropertyWidgetVisibilityBeacon_Radius.setRange(0, 0xFFFF)
+		self.actorInfo_PropertyWidgetVisibilityBeacon_Radius.valueChanged.connect(self.VisibilityBeaconRadiusChanged)
+
+		self.actorInfo_PropertyWidgetVisibilityBeacon_Invert = QtWidgets.QCheckBox()
+		self.actorInfo_PropertyWidgetVisibilityBeacon_Invert.toggled.connect(self.VisibilityBeaconInvertChanged)
+
+		self.actorInfo_PropertyWidgetVisibilityBeaconLayout.addRow(QtWidgets.QLabel("Radius"), self.actorInfo_PropertyWidgetVisibilityBeacon_Radius)
+		self.actorInfo_PropertyWidgetVisibilityBeaconLayout.addRow(QtWidgets.QLabel("Invert"), self.actorInfo_PropertyWidgetVisibilityBeacon_Invert)
+		self.actorInfo_PropertyWidgetVisibilityBeacon.setLayout(self.actorInfo_PropertyWidgetVisibilityBeaconLayout)
+
+
+		#### For things with no properties
+		self.actorInfo_PropertyWidgetNone = QtWidgets.QLabel("No properties")
+
+		self.actorInfo_PropertyWidget.addWidget(self.actorInfo_PropertyWidgetNone)
+		self.actorInfo_PropertyWidget.addWidget(self.actorInfo_PropertyWidgetGuard)
+		self.actorInfo_PropertyWidget.addWidget(self.actorInfo_PropertyWidgetVisibilityBeacon)
+
 
 		self.actorInfo_labelsLayout = QtWidgets.QVBoxLayout()
 		self.actorInfo_labelsLayout.addWidget(self.actorInfo_actorName)
@@ -249,7 +281,7 @@ class Window(QtWidgets.QMainWindow):
 		self.actorInfo_layout = QtWidgets.QVBoxLayout()
 		
 		self.actorInfo_layout.addLayout(self.actorInfo_headerLayout, 100)
-		self.actorInfo_layout.addWidget(self.actorInfo_RadiusEntry)
+		self.actorInfo_layout.addWidget(self.actorInfo_PropertyWidget)
 		self.actorInfo.setLayout(self.actorInfo_layout)
 
 		self.actorInfo_Panel = QtWidgets.QDockWidget()
@@ -351,6 +383,31 @@ class Window(QtWidgets.QMainWindow):
 		self.setupMenuBar()
 
 		self.UpdateSelection()
+
+	
+	def GuardNodeIDChanged(self, value):
+		current = current_level.selectedActors[0]
+
+		if type(current) is sneaklib.Guard:
+			current.nodeSetID = value
+
+		self.gridScene.update()
+
+	def VisibilityBeaconRadiusChanged(self, value):
+		current = current_level.selectedActors[0]
+
+		if type(current) is sneaklib.VisibilityBeacon:
+			current.radius = value
+
+		self.gridScene.update()
+	
+	def VisibilityBeaconInvertChanged(self):
+		current = current_level.selectedActors[0]
+
+		if type(current) is sneaklib.VisibilityBeacon:
+			current.invert = self.actorInfo_PropertyWidgetVisibilityBeacon_Invert.isChecked()
+
+		self.gridScene.update()
 
 	def AddNodeSet(self):
 		newNodeSet = sneaklib.NodeSet()
@@ -654,10 +711,20 @@ class Window(QtWidgets.QMainWindow):
 		
 		self.currentActorsWidget_Beacons.setText(0, "Visibility Beacons ({})".format(noBeacs))
 
+	def clearPropertyWidgetLayout(self):
+		if self.actorInfo_PropertyWidget.layout() is not None:
+			for i in reversed(range(self.actorInfo_PropertyWidget.layout().count())): 
+				self.actorInfo_PropertyWidget.layout().itemAt(i).widget().deleteLater()
+				self.actorInfo_PropertyWidget.layout().itemAt(i).widget().setParent(None)
+
+			print("Cleared property widgets; {} should be 0".format(self.actorInfo_PropertyWidget.layout().count()))
+		return
+
 	def UpdateSelection(self):
-		self.actorInfo_RadiusEntry.hide()
 		if len(current_level.selectedActors) == 1:
 			currentSelected = current_level.selectedActors[0]
+
+			self.actorInfo_PropertyWidget.setCurrentIndex(0)
 			self.actorInfo_actorPos.setText("(" + str(int(currentSelected.x)) + ", " + str(int(currentSelected.y)) + ")")
 			if type(currentSelected) is sneaklib.Gemstone:
 				self.actorInfo_actorName.setText("Gemstone")
@@ -669,6 +736,8 @@ class Window(QtWidgets.QMainWindow):
 				guardIco = QtGui.QPixmap(icons_path + "official_sneaksters/guard.png")
 				self.actorInfo_actorIconLabel.setPixmap(guardIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
 
+				self.actorInfo_PropertyWidget.setCurrentIndex(1)
+
 			elif type(currentSelected) is sneaklib.GemSack:
 				self.actorInfo_actorName.setText("Gem Sack")
 				gemsackIco = QtGui.QPixmap(icons_path + "official_sneaksters/gem_sack_ico.png")
@@ -678,8 +747,9 @@ class Window(QtWidgets.QMainWindow):
 				self.actorInfo_actorName.setText("Visibility Beacon")
 				gemsackIco = QtGui.QPixmap(icons_path + "official_sneaksters/beacon_ico.png")
 				self.actorInfo_actorIconLabel.setPixmap(gemsackIco.scaled(40,40, Qt.KeepAspectRatio, transformMode=Qt.SmoothTransformation))
-
-				self.actorInfo_RadiusEntry.show()
+				self.actorInfo_PropertyWidget.setCurrentIndex(2)
+				
+			self.UpdateProperties()
 
 		elif len(current_level.selectedActors) > 1:
 			self.actorInfo_actorName.setText("Multiple actors selected")
@@ -690,6 +760,18 @@ class Window(QtWidgets.QMainWindow):
 			self.actorInfo_actorName.setText("No actors selected")
 			self.actorInfo_actorPos.setText("")
 			self.actorInfo_actorIconLabel.clear()
+
+		
+
+	def UpdateProperties(self):
+		current = current_level.selectedActors[0]
+
+		if type(current) is sneaklib.Guard:
+			self.actorInfo_PropertyWidgetGuard_NodeID.setValue(current.nodeSetID)
+
+		elif type(current) is sneaklib.VisibilityBeacon:
+			self.actorInfo_PropertyWidgetVisibilityBeacon_Radius.setValue(current.radius)
+			self.actorInfo_PropertyWidgetVisibilityBeacon_Invert.setChecked(current.invert)
 
 	def updateRadValue(self, val):
 		if len(current_level.selectedActors) == 0: return
@@ -786,7 +868,8 @@ class GridScene(QtWidgets.QGraphicsScene):
 				else: current_level.selectedActors.remove(obj)
 
 				if len(current_level.selectedActors) == 1 and type(current_level.selectedActors[0]) is sneaklib.VisibilityBeacon:
-					self.parent.actorInfo_RadiusEntry.setValue(obj.radius)
+					# self.parent.actorInfo_RadiusEntry.setValue(obj.radius)
+					pass
 		elif obj_mode == 0:
 			if draw_mode == 0:
 				tile = current_level.TileAt(*array)
