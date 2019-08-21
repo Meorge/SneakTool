@@ -400,6 +400,12 @@ class Window(QtWidgets.QMainWindow):
 		if self.nodeListWidget_List.count() == 1:
 			self.nodeSetSelected = current_level.nodeSets[0]
 
+	def NewNodeSetListFromFile(self):
+		for i in range(len(current_level.nodeSets)):
+			self.nodeListWidget_List.addItem("")
+
+		self.UpdateNodeSetList()
+
 	def UpdateNodeSetList(self):
 		# need to fix this, otherwise bleh
 		print("Currently {} node sets".format(len(current_level.nodeSets)))
@@ -474,6 +480,7 @@ class Window(QtWidgets.QMainWindow):
 
 		self.centerView()
 		self.UpdateActorList()
+		self.NewNodeSetListFromFile()
 		self.gridScene.update(self.gridScene.sceneRect())
 
 

@@ -199,6 +199,9 @@ class NodeSet:
 
 	def pack(self):
 		output = b""
+		headerPacker = struct.Struct("H")
+		output += headerPacker.pack(len(self.nodes))
+		
 		singleNodePacker = struct.Struct("HHH")
 
 		for i in self.nodes:
@@ -675,6 +678,54 @@ class SneakstersLevel:
 		output = b''
 		output += nodeSetArrayHeaderPacker.pack(b"NODE", len(self.nodeSets))
 
+		for i in self.nodeSets:
+			output += i.pack()
+
+		return output
+
+	def UnpackNodeSetData(self, data):
+		nodeSetArrayHeaderUnpacker = struct.Struct('4s I')
+		singleNodeUnpacker = struct.Struct('HHH')
+
+		headerUnpacked = nodeSetArrayHeaderUnpacker.unpack(data[:nodeSetArrayHeaderUnpacker.size])
+
+		numberOfNodeSets = headerUnpacked[1]
+
+		currentOffset = nodeSetArrayHeaderUnpacker.size
+
+		for i in range(numberOfNodeSets):
+			nodeSetLengthUnpacker = struct.Struct('H')
+			nodeSetLength = nodeSetLengthUnpacker.unpack(data[ currentOffset : currentOffset + nodeSetLengthUnpacker.size ])[0]
+
+			currentOffset += nodeSetLengthUnpacker.size
+
+			newNodeSet = NodeSet()
+
+			for g in range(nodeSetLength):
+				singleNodeData = data[ currentOffset : currentOffset + singleNodeUnpacker.size ]
+				print("Data remaining:\t{}".format(data [currentOffset:]))
+				print("Next chunk:\t{}".format(data [currentOffset:currentOffset + singleNodeUnpacker.size]))
+				print("Length of node set data is {}".format(len(singleNodeData)))
+				singleNodeUnpacked = singleNodeUnpacker.unpack(singleNodeData)
+
+				newNode = NodeObject(singleNodeUnpacked[0], singleNodeUnpacked[1])
+				newNodeSet.addNode(newNode)
+
+				currentOffset += singleNodeUnpacker.size
+
+			self.nodeSets.append(newNodeSet)
+
+			
+
+			
+
+	def PackNodeSetData_OLD(self):
+		nodeSetArrayHeaderPacker = struct.Struct('4s I')
+		singleNodePacker = struct.Struct('HHH')
+
+		output = b''
+		output += nodeSetArrayHeaderPacker.pack(b"NODE", len(self.nodeSets))
+
 		# next, we need to get the offsets of each node set
 		offset = 0
 		for i in self.nodeSets:
@@ -686,8 +737,32 @@ class SneakstersLevel:
 
 		return output
 
-	def UnpackNodeSetData(self, data):
-		return
+	def UnpackNodeSetData_OLD(self, data):
+		nodeSetArrayHeaderUnpacker = struct.Struct('4s I')
+		singleNodeUnpacker = struct.Struct('HHH')
+
+		headerUnpacked = nodeSetArrayHeaderUnpacker.unpack(data[:nodeSetArrayHeaderUnpacker.size])
+		
+		numberOfNodeSets = headerUnpacked[1]
+
+		offset = nodeSetArrayHeaderUnpacker.size
+
+		nodeSetStartOffsets = []
+
+		for i in range(numberOfNodeSets):
+			h = struct.Struct('H')
+			offsetOfNodeData = h.unpack(data[offset:offset + h.size])
+			nodeSetStartOffsets.append(offsetOfNodeData[0])
+
+		# we now have a list of the offsets
+		# so basically, we want to iterate through this to start at points and go until the next one is hit
+
+		baseOffsetForNodeSets = offset + struct.Struct('H').size * numberOfNodeSets
+
+		for i in range(numberOfNodeSets):
+			nodeData = singleNodeUnpacker.unpack(data[baseOffsetForNodeSets + singleNodeUnpacker.size * i:baseOffsetForNodeSets + singleNodeUnpacker.size * (i+1)])
+
+			newNode = NodeObject(nodeData[0], nodeData[1])
 
 	def CreateActorFromData(self, id, x, y, data):
 		# no switch statements :(
