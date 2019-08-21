@@ -589,7 +589,7 @@ class SneakstersLevel:
 		# Nodeset array offset
 		# Nodeset array data
 
-		headerPacker = struct.Struct('4s B II II II')
+		headerPacker = struct.Struct('4s B 32x II II II')
 
 		# start the packing buffer
 		packed = b''
@@ -644,7 +644,7 @@ class SneakstersLevel:
 		
 	def UnpackLevelData(self, data):
 		
-		headerUnpacker = struct.Struct('4s B II II II')
+		headerUnpacker = struct.Struct('4s B 32x II II II')
 		print(data[:headerUnpacker.size])
 		header = headerUnpacker.unpack(data[:headerUnpacker.size])
 
